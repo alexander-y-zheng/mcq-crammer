@@ -636,6 +636,10 @@ function App() {
         )}
       </div>
 
+      <footer className="border-t border-[#d9dfd7] px-6 py-5 text-center text-xs text-[#819087] sm:px-10 lg:px-16">
+        <p>Made by Alex Zheng, 2026. Have feedback? <a href="https://neu.co1.qualtrics.com/jfe/form/SV_9ELn11adEWyNouG" target="_blank" rel="noreferrer" className="font-bold text-[#49623f] underline decoration-[#cbd6c9] underline-offset-2 transition hover:text-[#788c3d]">Let me know here!</a></p>
+      </footer>
+
       {showSubmitConfirmation && (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#1d2925]/45 px-5 py-8 backdrop-blur-sm" role="presentation">
           <section className="w-full max-w-lg rounded-3xl bg-white p-7 shadow-2xl sm:p-9" role="dialog" aria-modal="true" aria-labelledby="submit-confirmation-title">
