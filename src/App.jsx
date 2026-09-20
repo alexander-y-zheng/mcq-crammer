@@ -96,10 +96,12 @@ function App() {
   const [showSummary, setShowSummary] = useState(false)
   const [summaryAnimationKey, setSummaryAnimationKey] = useState(0)
   const [showMissedQuestions, setShowMissedQuestions] = useState(true)
+  const [showSubmitHint, setShowSubmitHint] = useState(false)
   const [reviewAll, setReviewAll] = useState(false)
   const [copiedPrompt, setCopiedPrompt] = useState('')
   const [showGuide, setShowGuide] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(() => window.localStorage.getItem('mcq-crammer-theme') === 'dark')
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   useEffect(() => {
     window.localStorage.setItem('mcq-crammer-theme', isDarkMode ? 'dark' : 'light')
@@ -289,6 +291,8 @@ function App() {
     URL.revokeObjectURL(url)
   }
 
+  const canChangeGradingMode = !quizStarted || isSubmitted
+
   const renderQuestion = (question, questionIndex) => {
     const selectedIndex = answers[questionIndex]
     const hasAnswered = selectedIndex !== undefined
@@ -354,6 +358,15 @@ function App() {
               title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {isDarkMode ? 'Light mode' : 'Dark mode'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsSettingsOpen(true)}
+              className="flex size-10 items-center justify-center rounded-full border border-[#cbd6c9] bg-white text-lg text-[#49623f] transition hover:border-[#91ad37]"
+              aria-label="Open quiz settings"
+              title="Open quiz settings"
+            >
+              <span aria-hidden="true">⚙</span>
             </button>
           </div>
         </header>
@@ -490,7 +503,12 @@ function App() {
 
             <div className="mx-auto mt-10 flex max-w-3xl flex-col items-center gap-4 border-t border-[#d9dfd7] pt-8">
               {isSubmitted && <p className="text-lg font-bold text-[#49623f]">You scored {getScore()} out of {questions.length}.</p>}
-              <button type="button" onClick={submitQuiz} disabled={isSubmitted || Object.keys(answers).length === 0} className="rounded-xl bg-[#263b31] px-8 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] disabled:cursor-not-allowed disabled:opacity-40">{isSubmitted ? 'Quiz submitted' : 'Submit Quiz'}</button>
+              <div className="relative" onMouseEnter={() => setShowSubmitHint(true)} onMouseLeave={() => setShowSubmitHint(false)}>
+                <button type="button" onClick={submitQuiz} disabled={isSubmitted || Object.keys(answers).length === 0} title={!isSubmitted && Object.keys(answers).length === 0 ? 'Answer at least one question to submit!' : undefined} aria-describedby={!isSubmitted && Object.keys(answers).length === 0 ? 'submit-hint' : undefined} className="rounded-xl bg-[#263b31] px-8 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] disabled:cursor-not-allowed disabled:opacity-40">{isSubmitted ? 'Quiz submitted' : 'Submit Quiz'}</button>
+                {!isSubmitted && Object.keys(answers).length === 0 && (
+                  <span id="submit-hint" role="tooltip" className={`pointer-events-none absolute bottom-full left-1/2 z-10 mb-3 w-max max-w-[calc(100vw-3rem)] -translate-x-1/2 rounded-xl bg-[#263b31] px-3 py-2 text-center text-xs font-semibold text-white shadow-lg transition-opacity ${showSubmitHint ? 'opacity-100' : 'opacity-0'}`}>Answer at least one question to submit!</span>
+                )}
+              </div>
             </div>
 
             {reviewAll && (
@@ -645,6 +663,52 @@ function App() {
           </section>
         </div>
       )}
+
+      <>
+        <button type="button" onClick={() => setIsSettingsOpen(false)} className={`fixed inset-0 z-30 cursor-default bg-[#1d2925]/30 backdrop-blur-sm transition-opacity duration-300 ${isSettingsOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`} aria-label="Close quiz settings" tabIndex={isSettingsOpen ? 0 : -1} />
+        <aside className={`fixed right-0 top-0 z-40 flex h-full w-full max-w-sm flex-col overflow-y-auto border-l border-[#d9dfd7] bg-white p-6 shadow-2xl transition-transform duration-300 ease-out sm:p-8 ${isSettingsOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full'}`} aria-labelledby="settings-title" aria-hidden={!isSettingsOpen}>
+            <div className="flex items-start justify-between gap-4 border-b border-[#d9dfd7] pb-6">
+              <div>
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Workspace</p>
+                <h2 id="settings-title" className="text-2xl font-black tracking-tight text-[#26332d]">Quiz settings</h2>
+              </div>
+              <button type="button" onClick={() => setIsSettingsOpen(false)} className="flex size-9 items-center justify-center rounded-full border border-[#cbd6c9] bg-white text-lg text-[#49623f] transition hover:border-[#91ad37]" aria-label="Close quiz settings" title="Close quiz settings">×</button>
+            </div>
+
+            <div className="space-y-8 py-8">
+              <fieldset>
+                <legend className="mb-3 text-sm font-bold text-[#33443a]">View mode</legend>
+                <div className="space-y-3">
+                  {[['single', 'One question at a time'], ['all', 'All on one page']].map(([value, label]) => (
+                    <label key={value} className={`block cursor-pointer rounded-2xl border p-4 transition ${viewMode === value ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7] hover:border-[#b8c6b6]'}`}>
+                      <input type="radio" name="sidebar-view-mode" value={value} checked={viewMode === value} onChange={(event) => setViewMode(event.target.value)} className="sr-only" />
+                      <span className="block text-sm font-bold text-[#33443a]">{label}</span>
+                      <span className="mt-1 block text-xs leading-5 text-[#819087]">{value === 'single' ? 'Stay focused on one prompt.' : 'Scan the full quiz at once.'}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend className="mb-3 text-sm font-bold text-[#33443a]">Grading mode</legend>
+                <div className="space-y-3">
+                  {[['instant', 'Instant feedback'], ['end', 'Grade at the end']].map(([value, label]) => (
+                    <div key={value} className="group relative">
+                      <label className={`block rounded-2xl border p-4 transition ${canChangeGradingMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'} ${gradingMode === value ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7]'}`}>
+                        <input type="radio" name="sidebar-grading-mode" value={value} checked={gradingMode === value} onChange={(event) => setGradingMode(event.target.value)} disabled={!canChangeGradingMode} className="sr-only" />
+                        <span className="block text-sm font-bold text-[#33443a]">{label}</span>
+                        <span className="mt-1 block text-xs leading-5 text-[#819087]">{value === 'instant' ? 'Learn as you go.' : 'See your result after the last question.'}</span>
+                      </label>
+                      {!canChangeGradingMode && (
+                        <span role="tooltip" className="pointer-events-none absolute bottom-full left-4 z-10 mb-2 w-max max-w-[calc(100% - 2rem)] rounded-xl bg-[#263b31] px-3 py-2 text-xs font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">Grading mode cannot be changed during a quiz.</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </fieldset>
+            </div>
+        </aside>
+      </>
     </main>
   )
 }
