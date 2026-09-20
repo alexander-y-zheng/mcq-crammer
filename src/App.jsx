@@ -23,6 +23,9 @@ function App() {
   const [answers, setAnswers] = useState({})
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [showSummary, setShowSummary] = useState(false)
+  const [reviewAll, setReviewAll] = useState(false)
+  const [copiedPrompt, setCopiedPrompt] = useState('')
 
   const saveQuiz = (content, name) => {
     const parsedQuestions = parseMarkdown(content)
@@ -39,6 +42,9 @@ function App() {
     setQuizStarted(false)
     setAnswers({})
     setIsSubmitted(false)
+    setShowSummary(false)
+    setReviewAll(false)
+    setCopiedPrompt('')
     setIsConfigOpen(true)
   }
 
@@ -62,6 +68,8 @@ function App() {
     setAnswers({})
     setCurrentQuestion(0)
     setIsSubmitted(false)
+    setShowSummary(false)
+    setReviewAll(false)
     setQuizStarted(true)
     setIsConfigOpen(false)
   }
@@ -75,6 +83,22 @@ function App() {
     const selectedOption = question.options[answers[index]]
     return score + (selectedOption?.isCorrect ? 1 : 0)
   }, 0)
+
+  const missedQuestions = questions.filter((question, index) => !question.options[answers[index]]?.isCorrect)
+  const missedQuestionText = missedQuestions.map((question) => {
+    const questionIndex = questions.indexOf(question)
+    const selectedAnswer = question.options[answers[questionIndex]]?.text || 'No answer selected'
+    const correctAnswer = question.options.find((option) => option.isCorrect)?.text || 'No correct answer marked'
+    return `Question: ${question.question}\nMy answer: ${selectedAnswer}\nCorrect answer: ${correctAnswer}`
+  }).join('\n\n')
+  const explanationPrompt = `I am reviewing a quiz called "${fileName}". Explain why my answers below were wrong. For each question, explain the reasoning, identify the misconception, and keep the explanation clear.\n\n${missedQuestionText}`
+  const teachingPrompt = `Teach me the concepts I missed in this quiz, "${fileName}". Build a short study lesson from these questions, use simple examples, and finish with a few practice questions.\n\n${missedQuestionText}`
+
+  const copyPrompt = async (promptName, prompt) => {
+    await navigator.clipboard.writeText(prompt)
+    setCopiedPrompt(promptName)
+    window.setTimeout(() => setCopiedPrompt(''), 1800)
+  }
 
   const renderQuestion = (question, questionIndex) => {
     const selectedIndex = answers[questionIndex]
@@ -125,19 +149,80 @@ function App() {
           <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6c7b70]">Quiz workspace</span>
         </header>
 
-        {quizStarted ? (
+        {quizStarted ? showSummary ? (
+          <section className="flex-1 py-10 sm:py-14">
+            <div className="mx-auto max-w-3xl">
+              <div className="mb-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+                <div>
+                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#788c3d]">Quiz complete</p>
+                  <h1 className="text-4xl font-black tracking-[-0.04em] text-[#1d2925] sm:text-6xl">Your results.</h1>
+                  <p className="mt-3 text-sm text-[#738077]">{fileName}</p>
+                </div>
+                <div className="flex size-32 flex-col items-center justify-center rounded-full bg-[#e9f3c5] text-center text-[#334c3a]">
+                  <span className="text-3xl font-black">{getScore()} / {questions.length}</span>
+                  <span className="text-xs font-bold uppercase tracking-wider">score</span>
+                </div>
+              </div>
+
+              {missedQuestions.length > 0 ? (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-bold text-[#33443a]">Review your missed questions</h2>
+                  {missedQuestions.map((question) => {
+                    const questionIndex = questions.indexOf(question)
+                    const selectedAnswer = question.options[answers[questionIndex]]?.text || 'No answer selected'
+                    const correctAnswer = question.options.find((option) => option.isCorrect)?.text || 'No correct answer marked'
+                    return (
+                      <article key={questionIndex} className="rounded-2xl border border-[#ead7d2] bg-white p-5 shadow-sm">
+                        <p className="font-bold leading-6 text-[#33443a]">{questionIndex + 1}. {question.question}</p>
+                        <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                          <div className="rounded-xl bg-[#fff0ed] px-4 py-3 text-[#98493e]"><span className="font-bold">You picked:</span> {selectedAnswer}</div>
+                          <div className="rounded-xl bg-[#eaf6e7] px-4 py-3 text-[#38643a]"><span className="font-bold">Right answer:</span> {correctAnswer}</div>
+                        </div>
+                      </article>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-2xl bg-[#eaf6e7] p-6 text-center font-bold text-[#38643a]">Perfect score. Every answer is correct.</div>
+              )}
+
+              {missedQuestions.length > 0 && (
+                <div className="mt-10 space-y-5">
+                  <h2 className="text-lg font-bold text-[#33443a]">Keep learning</h2>
+                  {[
+                    ['explain', 'Explain my mistakes', explanationPrompt],
+                    ['teach', 'Teach me the missed concepts', teachingPrompt],
+                  ].map(([promptName, title, prompt]) => (
+                    <div key={promptName}>
+                      <div className="mb-2 flex items-center justify-between gap-4">
+                        <label htmlFor={`${promptName}-prompt`} className="text-sm font-bold text-[#33443a]">{title}</label>
+                        <button type="button" onClick={() => copyPrompt(promptName, prompt)} className="rounded-lg border border-[#cbd6c9] bg-white px-3 py-1.5 text-xs font-bold text-[#49623f] transition hover:border-[#91ad37]">{copiedPrompt === promptName ? 'Copied' : 'Copy'}</button>
+                      </div>
+                      <textarea id={`${promptName}-prompt`} readOnly value={prompt} className="min-h-36 w-full resize-y rounded-2xl border border-[#cbd6c9] bg-white p-4 text-sm leading-6 text-[#617067] outline-none focus:border-[#91ad37] focus:ring-4 focus:ring-[#e9f3c5]" />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button type="button" onClick={() => { setShowSummary(false); setReviewAll(true) }} className="mt-10 w-full rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Back to Quiz</button>
+            </div>
+          </section>
+        ) : (
           <section className="flex-1 py-10 sm:py-14">
             <div className="mb-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
               <div>
                 <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#788c3d]">{fileName}</p>
                 <h1 className="text-4xl font-black tracking-[-0.04em] text-[#1d2925] sm:text-6xl">Let&apos;s get started.</h1>
               </div>
-              <div className="rounded-xl bg-white px-4 py-3 text-right text-sm font-semibold text-[#617067] shadow-sm">
-                {viewMode === 'single' ? `Question ${currentQuestion + 1} of ${questions.length}` : `${Object.keys(answers).length} of ${questions.length} answered`}
+              <div className="flex items-center gap-3">
+                <div className="rounded-xl bg-white px-4 py-3 text-right text-sm font-semibold text-[#617067] shadow-sm">
+                  {viewMode === 'single' && !reviewAll ? `Question ${currentQuestion + 1} of ${questions.length}` : `${Object.keys(answers).length} of ${questions.length} answered`}
+                </div>
+                <button type="button" onClick={() => setShowSummary(true)} className="rounded-xl border border-[#cbd6c9] bg-white px-4 py-3 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Show Summary</button>
               </div>
             </div>
 
-            {viewMode === 'single' ? (
+            {viewMode === 'single' && !reviewAll ? (
               <div className="mx-auto max-w-3xl">
                 {renderQuestion(questions[currentQuestion], currentQuestion)}
                 <div className="mt-6 flex justify-between gap-4">
@@ -151,10 +236,10 @@ function App() {
               </div>
             )}
 
-            {gradingMode === 'end' && (
+            {gradingMode === 'end' && !reviewAll && (
               <div className="mx-auto mt-10 flex max-w-3xl flex-col items-center gap-4 border-t border-[#d9dfd7] pt-8">
                 {isSubmitted && <p className="text-lg font-bold text-[#49623f]">You scored {getScore()} out of {questions.length}.</p>}
-                <button type="button" onClick={() => setIsSubmitted(true)} disabled={isSubmitted || Object.keys(answers).length === 0} className="rounded-xl bg-[#263b31] px-8 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] disabled:cursor-not-allowed disabled:opacity-40">{isSubmitted ? 'Quiz submitted' : 'Submit Quiz'}</button>
+                <button type="button" onClick={() => { setIsSubmitted(true); setShowSummary(true) }} disabled={isSubmitted || Object.keys(answers).length === 0} className="rounded-xl bg-[#263b31] px-8 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] disabled:cursor-not-allowed disabled:opacity-40">{isSubmitted ? 'Quiz submitted' : 'Submit Quiz'}</button>
               </div>
             )}
           </section>
