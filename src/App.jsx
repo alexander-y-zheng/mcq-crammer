@@ -95,6 +95,7 @@ function App() {
   const [showRetryConfirmation, setShowRetryConfirmation] = useState(false)
   const [showSummary, setShowSummary] = useState(false)
   const [summaryAnimationKey, setSummaryAnimationKey] = useState(0)
+  const [showMissedQuestions, setShowMissedQuestions] = useState(true)
   const [reviewAll, setReviewAll] = useState(false)
   const [copiedPrompt, setCopiedPrompt] = useState('')
   const [showGuide, setShowGuide] = useState(false)
@@ -225,6 +226,14 @@ function App() {
     }, 0)
   }
 
+  const deselectAnswer = (questionIndex) => {
+    setAnswers((currentAnswers) => {
+      const nextAnswers = { ...currentAnswers }
+      delete nextAnswers[questionIndex]
+      return nextAnswers
+    })
+  }
+
   const submitQuiz = () => {
     const unanswered = questions.length - Object.keys(answers).length
     if (unanswered > 0) {
@@ -244,7 +253,9 @@ function App() {
 
   const showSummaryPage = () => {
     setSummaryAnimationKey((key) => key + 1)
+    setShowMissedQuestions(true)
     setShowSummary(true)
+    window.scrollTo(0, 0)
   }
 
   const getScore = () => questions.reduce((score, question, index) => {
@@ -288,7 +299,14 @@ function App() {
       <article id={`question-${questionIndex}`} key={questionIndex} className="rounded-3xl border border-[#d9dfd7] bg-white p-6 shadow-[0_12px_30px_rgba(54,75,61,0.06)] sm:p-8">
         <div className="mb-6 flex items-center justify-between gap-4">
           <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Question {questionIndex + 1}</span>
-          {hasAnswered && <span className="text-xs font-semibold text-[#819087]">Answer selected</span>}
+          {hasAnswered && (
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-semibold text-[#819087]">Answer selected</span>
+              {gradingMode === 'end' && !isSubmitted && (
+                <button type="button" onClick={() => deselectAnswer(questionIndex)} className="text-xs font-bold text-[#819087] underline decoration-[#cbd6c9] underline-offset-2 transition hover:text-[#49623f]">Deselect answer</button>
+              )}
+            </div>
+          )}
         </div>
         <div className="text-xl font-bold leading-8 tracking-tight text-[#26332d] sm:text-2xl"><MarkdownContent>{question.question}</MarkdownContent></div>
         <div className="mt-7 space-y-3">
@@ -390,21 +408,28 @@ function App() {
 
               {missedQuestions.length > 0 ? (
                 <div className="space-y-4">
-                  <h2 className="text-lg font-bold text-[#33443a]">Review your missed questions</h2>
-                  {missedQuestions.map((question) => {
-                    const questionIndex = questions.indexOf(question)
-                    const selectedAnswer = question.options[answers[questionIndex]]?.text || 'No answer selected'
-                    const correctAnswer = question.options.find((option) => option.isCorrect)?.text || 'No correct answer marked'
-                    return (
-                      <article key={questionIndex} className="rounded-2xl border border-[#ead7d2] bg-white p-5 shadow-sm">
-                        <p className="font-bold leading-6 text-[#33443a]">{questionIndex + 1}. {question.question}</p>
-                        <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-                          <div className="rounded-xl bg-[#fff0ed] px-4 py-3 text-[#98493e]"><span className="font-bold">You picked:</span> {selectedAnswer}</div>
-                          <div className="rounded-xl bg-[#eaf6e7] px-4 py-3 text-[#38643a]"><span className="font-bold">Right answer:</span> {correctAnswer}</div>
-                        </div>
-                      </article>
-                    )
-                  })}
+                  <button type="button" onClick={() => setShowMissedQuestions((isVisible) => !isVisible)} aria-expanded={showMissedQuestions} aria-controls="missed-questions" className="flex w-full items-center justify-between gap-4 text-left">
+                    <span className="text-lg font-bold text-[#33443a]">Review your missed questions</span>
+                    <span className="text-xl font-semibold text-[#788c3d]" aria-hidden="true">{showMissedQuestions ? '-' : '+'}</span>
+                  </button>
+                  {showMissedQuestions && (
+                    <div id="missed-questions" className="space-y-4">
+                      {missedQuestions.map((question) => {
+                        const questionIndex = questions.indexOf(question)
+                        const selectedAnswer = question.options[answers[questionIndex]]?.text || 'No answer selected'
+                        const correctAnswer = question.options.find((option) => option.isCorrect)?.text || 'No correct answer marked'
+                        return (
+                          <article key={questionIndex} className="rounded-2xl border border-[#ead7d2] bg-white p-5 shadow-sm">
+                            <p className="font-bold leading-6 text-[#33443a]">{questionIndex + 1}. {question.question}</p>
+                            <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                              <div className="rounded-xl bg-[#fff0ed] px-4 py-3 text-[#98493e]"><span className="font-bold">You picked:</span> {selectedAnswer}</div>
+                              <div className="rounded-xl bg-[#eaf6e7] px-4 py-3 text-[#38643a]"><span className="font-bold">Right answer:</span> {correctAnswer}</div>
+                            </div>
+                          </article>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="rounded-2xl bg-[#eaf6e7] p-6 text-center font-bold text-[#38643a]">Perfect score. Every answer is correct!</div>
@@ -456,10 +481,6 @@ function App() {
                   <button type="button" disabled={currentQuestion === 0} onClick={() => setCurrentQuestion((index) => index - 1)} className="rounded-xl border border-[#cbd6c9] bg-white px-5 py-3 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37] disabled:cursor-not-allowed disabled:opacity-40">Previous</button>
                   <button type="button" disabled={currentQuestion === questions.length - 1} onClick={() => setCurrentQuestion((index) => index + 1)} className="rounded-xl bg-[#263b31] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#17281f] disabled:cursor-not-allowed disabled:opacity-40">Next question</button>
                 </div>
-                <div className="mx-auto mt-10 flex max-w-3xl flex-col items-center gap-4 border-t border-[#d9dfd7] pt-8">
-                  {isSubmitted && <p className="text-lg font-bold text-[#49623f]">You scored {getScore()} out of {questions.length}.</p>}
-                  <button type="button" onClick={submitQuiz} disabled={isSubmitted || Object.keys(answers).length === 0} className="rounded-xl bg-[#263b31] px-8 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] disabled:cursor-not-allowed disabled:opacity-40">{isSubmitted ? 'Quiz submitted' : 'Submit Quiz'}</button>
-                </div>
               </div>
             ) : (
               <div className="mx-auto max-w-3xl space-y-6">
@@ -467,12 +488,10 @@ function App() {
               </div>
             )}
 
-            {gradingMode === 'end' && !reviewAll && (
-              <div className="mx-auto mt-10 flex max-w-3xl flex-col items-center gap-4 border-t border-[#d9dfd7] pt-8">
-                {isSubmitted && <p className="text-lg font-bold text-[#49623f]">You scored {getScore()} out of {questions.length}.</p>}
-                <button type="button" onClick={submitQuiz} disabled={isSubmitted || Object.keys(answers).length === 0} className="rounded-xl bg-[#263b31] px-8 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] disabled:cursor-not-allowed disabled:opacity-40">{isSubmitted ? 'Quiz submitted' : 'Submit Quiz'}</button>
-              </div>
-            )}
+            <div className="mx-auto mt-10 flex max-w-3xl flex-col items-center gap-4 border-t border-[#d9dfd7] pt-8">
+              {isSubmitted && <p className="text-lg font-bold text-[#49623f]">You scored {getScore()} out of {questions.length}.</p>}
+              <button type="button" onClick={submitQuiz} disabled={isSubmitted || Object.keys(answers).length === 0} className="rounded-xl bg-[#263b31] px-8 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] disabled:cursor-not-allowed disabled:opacity-40">{isSubmitted ? 'Quiz submitted' : 'Submit Quiz'}</button>
+            </div>
 
             {reviewAll && (
               <div className="mx-auto mt-10 flex max-w-3xl flex-col items-center gap-3 border-t border-[#d9dfd7] pt-8">
