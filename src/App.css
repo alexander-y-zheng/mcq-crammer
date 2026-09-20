@@ -182,3 +182,64 @@
     border-right-color: var(--border);
   }
 }
+
+.dark-mode {
+  background-color: #151b18 !important;
+  color: #e8eee8 !important;
+  color-scheme: dark;
+}
+
+.dark-mode [class~="bg-white"] {
+  background-color: #202a24 !important;
+}
+
+.dark-mode [class~="bg-[#f6f7f2]"] {
+  background-color: #151b18 !important;
+}
+
+.dark-mode [class~="bg-[#f8faf5]"],
+.dark-mode [class~="bg-[#fafcf7]"] {
+  background-color: #1a241e !important;
+}
+
+.dark-mode [class~="text-[#1d2925]"],
+.dark-mode [class~="text-[#26332d]"],
+.dark-mode [class~="text-[#33443a]"],
+.dark-mode [class~="text-[#334c3a]"],
+.dark-mode [class~="text-[#49623f]"] {
+  color: #e8eee8 !important;
+}
+
+.dark-mode [class~="text-[#617067]"],
+.dark-mode [class~="text-[#738077]"],
+.dark-mode [class~="text-[#819087]"],
+.dark-mode [class~="text-[#6c7b70]"],
+.dark-mode [class~="text-[#5e7063]"],
+.dark-mode [class~="text-[#4d6253]"] {
+  color: #aebcb0 !important;
+}
+
+.dark-mode [class~="border-[#d9dfd7]"],
+.dark-mode [class~="border-[#cbd6c9]"],
+.dark-mode [class~="border-[#ead7d2]"] {
+  border-color: #3b4b40 !important;
+}
+
+.dark-mode [class~="bg-[#f4f7ef]"],
+.dark-mode [class~="bg-[#f4f9df]"],
+.dark-mode [class~="bg-[#e9f3c5]"] {
+  background-color: #2b3a2d !important;
+}
+
+.dark-mode [class~="bg-[#eaf6e7]"] {
+  background-color: #203a2a !important;
+}
+
+.dark-mode [class~="bg-[#fff0ed]"] {
+  background-color: #452925 !important;
+}
+
+.dark-mode .theme-toggle {
+  background-color: #202a24 !important;
+  color: #d6ed63 !important;
+}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { parseMarkdown } from './quizParser'
 import biologyQuiz from './quiz_examples/quiz_biology_basics.md?raw'
 import financeQuiz from './quiz_examples/quiz_finance_tvm.md?raw'
@@ -61,6 +61,11 @@ function App() {
   const [reviewAll, setReviewAll] = useState(false)
   const [copiedPrompt, setCopiedPrompt] = useState('')
   const [showGuide, setShowGuide] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(() => window.localStorage.getItem('mcq-crammer-theme') === 'dark')
+
+  useEffect(() => {
+    window.localStorage.setItem('mcq-crammer-theme', isDarkMode ? 'dark' : 'light')
+  }, [isDarkMode])
 
   const saveQuiz = (content, name) => {
     const parsedQuestions = parseMarkdown(content)
@@ -184,16 +189,27 @@ function App() {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f6f7f2] text-[#1d2925]">
+    <main className={`min-h-screen overflow-hidden bg-[#f6f7f2] text-[#1d2925] ${isDarkMode ? 'dark-mode' : ''}`}>
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-8 sm:px-10 lg:px-16">
         <header className="flex items-center justify-between border-b border-[#d9dfd7] pb-6">
           <div className="flex items-center gap-3 font-bold tracking-tight">
             <span className="flex size-9 items-center justify-center rounded-xl bg-[#d6ed63] text-lg text-[#26331f]">?</span>
             <span>MCQ Crammer</span>
           </div>
-          <button type="button" onClick={() => setShowGuide((isVisible) => !isVisible)} className="text-xs font-bold uppercase tracking-[0.14em] text-[#6c7b70] transition hover:text-[#334c3a]">
-            {showGuide ? 'Back to workspace' : 'How to use AI'}
-          </button>
+          <div className="flex items-center gap-5">
+            <button type="button" onClick={() => setShowGuide((isVisible) => !isVisible)} className="text-xs font-bold uppercase tracking-[0.14em] text-[#6c7b70] transition hover:text-[#334c3a]">
+              {showGuide ? 'Back to workspace' : 'How to use AI'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsDarkMode((isEnabled) => !isEnabled)}
+              className="theme-toggle rounded-full border border-[#cbd6c9] bg-white px-3 py-2 text-xs font-bold text-[#49623f] transition hover:border-[#91ad37]"
+              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDarkMode ? 'Light mode' : 'Dark mode'}
+            </button>
+          </div>
         </header>
 
         {showGuide ? (
