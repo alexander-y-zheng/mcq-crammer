@@ -57,6 +57,9 @@ function App() {
   const [answers, setAnswers] = useState({})
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [unansweredCount, setUnansweredCount] = useState(0)
+  const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false)
+  const [showResetConfirmation, setShowResetConfirmation] = useState(false)
   const [showSummary, setShowSummary] = useState(false)
   const [reviewAll, setReviewAll] = useState(false)
   const [copiedPrompt, setCopiedPrompt] = useState('')
@@ -82,6 +85,8 @@ function App() {
     setQuizStarted(false)
     setAnswers({})
     setIsSubmitted(false)
+    setUnansweredCount(0)
+    setShowSubmitConfirmation(false)
     setShowSummary(false)
     setReviewAll(false)
     setCopiedPrompt('')
@@ -105,18 +110,87 @@ function App() {
   }
 
   const startQuiz = () => {
+    window.scrollTo(0, 0)
     setAnswers({})
     setCurrentQuestion(0)
     setIsSubmitted(false)
+    setUnansweredCount(0)
+    setShowSubmitConfirmation(false)
     setShowSummary(false)
     setReviewAll(false)
     setQuizStarted(true)
     setIsConfigOpen(false)
   }
 
+  const returnHome = () => {
+    setQuestions([])
+    setFileName('')
+    setSelectedSample('')
+    setError('')
+    setQuizStarted(false)
+    setAnswers({})
+    setCurrentQuestion(0)
+    setIsSubmitted(false)
+    setUnansweredCount(0)
+    setShowSubmitConfirmation(false)
+    setShowResetConfirmation(false)
+    setShowSummary(false)
+    setReviewAll(false)
+    setIsConfigOpen(false)
+    window.scrollTo(0, 0)
+  }
+
+  const handleHomeClick = () => {
+    if (quizStarted) setShowResetConfirmation(true)
+  }
+
+  const smoothScrollTo = (targetTop) => {
+    const startTop = window.scrollY
+    const distance = targetTop - startTop
+    const duration = 700
+    const startTime = performance.now()
+
+    const animateScroll = (currentTime) => {
+      const progress = Math.min((currentTime - startTime) / duration, 1)
+      const easedProgress = progress < 0.5
+        ? 2 * progress * progress
+        : 1 - ((-2 * progress + 2) ** 2) / 2
+      window.scrollTo(0, startTop + (distance * easedProgress))
+      if (progress < 1) window.requestAnimationFrame(animateScroll)
+    }
+
+    window.requestAnimationFrame(animateScroll)
+  }
+
   const selectAnswer = (questionIndex, optionIndex) => {
     if (gradingMode === 'instant' && answers[questionIndex] !== undefined) return
     setAnswers((currentAnswers) => ({ ...currentAnswers, [questionIndex]: optionIndex }))
+    window.setTimeout(() => {
+      if (viewMode === 'all' || reviewAll) {
+        const targetQuestionIndex = gradingMode === 'instant' ? questionIndex : questionIndex + 1
+        const targetQuestion = document.getElementById(`question-${targetQuestionIndex}`)
+        if (targetQuestion) smoothScrollTo(targetQuestion.getBoundingClientRect().top + window.scrollY)
+      } else {
+        smoothScrollTo(document.documentElement.scrollHeight)
+      }
+    }, 0)
+  }
+
+  const submitQuiz = () => {
+    const unanswered = questions.length - Object.keys(answers).length
+    if (unanswered > 0) {
+      setUnansweredCount(unanswered)
+      setShowSubmitConfirmation(true)
+      return
+    }
+    setIsSubmitted(true)
+    setShowSummary(true)
+  }
+
+  const confirmSubmitQuiz = () => {
+    setShowSubmitConfirmation(false)
+    setIsSubmitted(true)
+    setShowSummary(true)
   }
 
   const getScore = () => questions.reduce((score, question, index) => {
@@ -157,7 +231,7 @@ function App() {
     const showResults = gradingMode === 'end' && isSubmitted
 
     return (
-      <article key={questionIndex} className="rounded-3xl border border-[#d9dfd7] bg-white p-6 shadow-[0_12px_30px_rgba(54,75,61,0.06)] sm:p-8">
+      <article id={`question-${questionIndex}`} key={questionIndex} className="rounded-3xl border border-[#d9dfd7] bg-white p-6 shadow-[0_12px_30px_rgba(54,75,61,0.06)] sm:p-8">
         <div className="mb-6 flex items-center justify-between gap-4">
           <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Question {questionIndex + 1}</span>
           {hasAnswered && <span className="text-xs font-semibold text-[#819087]">Answer selected</span>}
@@ -192,10 +266,10 @@ function App() {
     <main className={`min-h-screen overflow-hidden bg-[#f6f7f2] text-[#1d2925] ${isDarkMode ? 'dark-mode' : ''}`}>
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-8 sm:px-10 lg:px-16">
         <header className="flex items-center justify-between border-b border-[#d9dfd7] pb-6">
-          <div className="flex items-center gap-3 font-bold tracking-tight">
+          <button type="button" onClick={handleHomeClick} className="flex items-center gap-3 font-bold tracking-tight">
             <span className="flex size-9 items-center justify-center rounded-xl bg-[#d6ed63] text-lg text-[#26331f]">?</span>
             <span>MCQ Crammer</span>
-          </div>
+          </button>
           <div className="flex items-center gap-5">
             <button type="button" onClick={() => setShowGuide((isVisible) => !isVisible)} className="text-xs font-bold uppercase tracking-[0.14em] text-[#6c7b70] transition hover:text-[#334c3a]">
               {showGuide ? 'Back to workspace' : 'How to use AI'}
@@ -308,7 +382,7 @@ function App() {
                 <div className="rounded-xl bg-white px-4 py-3 text-right text-sm font-semibold text-[#617067] shadow-sm">
                   {viewMode === 'single' && !reviewAll ? `Question ${currentQuestion + 1} of ${questions.length}` : `${Object.keys(answers).length} of ${questions.length} answered`}
                 </div>
-                <button type="button" onClick={() => setShowSummary(true)} className="rounded-xl border border-[#cbd6c9] bg-white px-4 py-3 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Show Summary</button>
+                {reviewAll && <button type="button" onClick={() => setShowSummary(true)} className="rounded-xl border border-[#cbd6c9] bg-white px-4 py-3 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Show Summary</button>}
               </div>
             </div>
 
@@ -329,7 +403,13 @@ function App() {
             {gradingMode === 'end' && !reviewAll && (
               <div className="mx-auto mt-10 flex max-w-3xl flex-col items-center gap-4 border-t border-[#d9dfd7] pt-8">
                 {isSubmitted && <p className="text-lg font-bold text-[#49623f]">You scored {getScore()} out of {questions.length}.</p>}
-                <button type="button" onClick={() => { setIsSubmitted(true); setShowSummary(true) }} disabled={isSubmitted || Object.keys(answers).length === 0} className="rounded-xl bg-[#263b31] px-8 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] disabled:cursor-not-allowed disabled:opacity-40">{isSubmitted ? 'Quiz submitted' : 'Submit Quiz'}</button>
+                <button type="button" onClick={submitQuiz} disabled={isSubmitted || Object.keys(answers).length === 0} className="rounded-xl bg-[#263b31] px-8 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] disabled:cursor-not-allowed disabled:opacity-40">{isSubmitted ? 'Quiz submitted' : 'Submit Quiz'}</button>
+              </div>
+            )}
+
+            {reviewAll && (
+              <div className="mx-auto mt-10 flex max-w-3xl justify-center border-t border-[#d9dfd7] pt-8">
+                <button type="button" onClick={() => setShowSummary(true)} className="rounded-xl border border-[#cbd6c9] bg-white px-5 py-3.5 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Show Summary</button>
               </div>
             )}
           </section>
@@ -375,7 +455,7 @@ function App() {
         </section>
         )}
 
-        {!showGuide && (fileName || error) && (
+        {!showGuide && !quizStarted && (fileName || error) && (
           <section className="mb-8 rounded-2xl border border-[#d9dfd7] bg-white px-5 py-4 text-sm shadow-sm">
             {error ? <p className="font-semibold text-[#a34d3f]">{error}</p> : <p className="font-semibold text-[#49623f]">{fileName} loaded: {questions.length} questions ready{quizStarted ? ` in ${viewMode === 'single' ? 'one-question' : 'all-at-once'} mode.` : '.'}</p>}
           </section>
@@ -423,6 +503,34 @@ function App() {
             </div>
 
             <button type="button" onClick={startQuiz} className="mt-8 w-full rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Start Quiz</button>
+          </section>
+        </div>
+      )}
+
+      {showSubmitConfirmation && (
+        <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#1d2925]/45 px-5 py-8 backdrop-blur-sm" role="presentation">
+          <section className="w-full max-w-lg rounded-3xl bg-white p-7 shadow-2xl sm:p-9" role="dialog" aria-modal="true" aria-labelledby="submit-confirmation-title">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Ready to submit?</p>
+            <h2 id="submit-confirmation-title" className="text-3xl font-black tracking-tight text-[#26332d]">Some questions are unanswered.</h2>
+            <p className="mt-3 text-sm leading-6 text-[#738077]">You have {unansweredCount} unanswered {unansweredCount === 1 ? 'question' : 'questions'}. Are you sure you want to submit without answering them?</p>
+            <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setShowSubmitConfirmation(false)} className="rounded-xl border border-[#cbd6c9] bg-white px-5 py-3.5 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Cancel</button>
+              <button type="button" onClick={confirmSubmitQuiz} className="rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Submit Quiz</button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {showResetConfirmation && (
+        <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#1d2925]/45 px-5 py-8 backdrop-blur-sm" role="presentation">
+          <section className="w-full max-w-lg rounded-3xl bg-white p-7 shadow-2xl sm:p-9" role="dialog" aria-modal="true" aria-labelledby="reset-confirmation-title">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Leave quiz?</p>
+            <h2 id="reset-confirmation-title" className="text-3xl font-black tracking-tight text-[#26332d]">Return to the home page?</h2>
+            <p className="mt-3 text-sm leading-6 text-[#738077]">You will lose your progress and will have to reupload a file to start another quiz.</p>
+            <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setShowResetConfirmation(false)} className="rounded-xl border border-[#cbd6c9] bg-white px-5 py-3.5 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Cancel</button>
+              <button type="button" onClick={returnHome} className="rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Return Home</button>
+            </div>
           </section>
         </div>
       )}
