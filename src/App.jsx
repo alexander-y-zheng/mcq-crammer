@@ -10,6 +10,40 @@ const sampleQuizzes = [
   { name: 'Finance: time value of money', fileName: 'quiz_finance_tvm.md', content: financeQuiz },
 ]
 
+const quizGenerationPrompt = `Create a multiple-choice quiz in Markdown using exactly this format:
+
+### [Question]
+- [ ] [Incorrect answer]
+- [x] [Correct answer]
+- [ ] [Incorrect answer]
+- [ ] [Incorrect answer]
+> Explanation: [A concise explanation of why the correct answer is right]
+
+Requirements:
+- Create 10 questions about [INSERT TOPIC].
+- Give each question exactly 4 answer options.
+- Mark exactly one correct option with [x] and all others with [ ].
+- Put the correct answer in a different position each time.
+- Keep explanations clear and educational.
+- Return only the Markdown quiz, with no introduction or closing text.`
+
+const quizTemplate = `# My Quiz
+
+### 1. Write your question here?
+- [ ] Incorrect answer
+- [x] Correct answer
+- [ ] Incorrect answer
+- [ ] Incorrect answer
+> Explanation: Explain why the correct answer is right.
+
+### 2. Write another question here?
+- [ ] Incorrect answer
+- [ ] Incorrect answer
+- [x] Correct answer
+- [ ] Incorrect answer
+> Explanation: Explain why the correct answer is right.
+`
+
 function App() {
   const [questions, setQuestions] = useState([])
   const [fileName, setFileName] = useState('')
@@ -26,6 +60,7 @@ function App() {
   const [showSummary, setShowSummary] = useState(false)
   const [reviewAll, setReviewAll] = useState(false)
   const [copiedPrompt, setCopiedPrompt] = useState('')
+  const [showGuide, setShowGuide] = useState(false)
 
   const saveQuiz = (content, name) => {
     const parsedQuestions = parseMarkdown(content)
@@ -100,6 +135,16 @@ function App() {
     window.setTimeout(() => setCopiedPrompt(''), 1800)
   }
 
+  const downloadTemplate = () => {
+    const blob = new Blob([quizTemplate], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'quiz-template.md'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   const renderQuestion = (question, questionIndex) => {
     const selectedIndex = answers[questionIndex]
     const hasAnswered = selectedIndex !== undefined
@@ -146,10 +191,39 @@ function App() {
             <span className="flex size-9 items-center justify-center rounded-xl bg-[#d6ed63] text-lg text-[#26331f]">?</span>
             <span>MCQ Crammer</span>
           </div>
-          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6c7b70]">Quiz workspace</span>
+          <button type="button" onClick={() => setShowGuide((isVisible) => !isVisible)} className="text-xs font-bold uppercase tracking-[0.14em] text-[#6c7b70] transition hover:text-[#334c3a]">
+            {showGuide ? 'Back to workspace' : 'How to use AI'}
+          </button>
         </header>
 
-        {quizStarted ? showSummary ? (
+        {showGuide ? (
+          <section className="flex-1 py-10 sm:py-14">
+            <div className="mx-auto max-w-3xl">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#788c3d]">Build a quiz in seconds</p>
+              <h1 className="max-w-2xl text-4xl font-black leading-[1.02] tracking-[-0.04em] text-[#1d2925] sm:text-6xl">How to use AI to generate quizzes.</h1>
+              <p className="mt-5 max-w-2xl text-lg leading-8 text-[#617067]">Ask ChatGPT or Claude for a quiz in the format MCQ Crammer understands, then upload the Markdown file here.</p>
+
+              <div className="mt-10 rounded-3xl border border-[#d9dfd7] bg-white p-6 shadow-[0_12px_30px_rgba(54,75,61,0.06)] sm:p-8">
+                <div className="mb-4 flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-bold tracking-tight text-[#26332d]">Copy this prompt</h2>
+                    <p className="mt-1 text-sm text-[#738077]">Replace the topic placeholder before sending.</p>
+                  </div>
+                  <button type="button" onClick={() => copyPrompt('guide', quizGenerationPrompt)} className="shrink-0 rounded-lg border border-[#cbd6c9] bg-white px-3 py-2 text-xs font-bold text-[#49623f] transition hover:border-[#91ad37]">{copiedPrompt === 'guide' ? 'Copied' : 'Copy'}</button>
+                </div>
+                <textarea readOnly value={quizGenerationPrompt} className="min-h-80 w-full resize-y rounded-2xl border border-[#cbd6c9] bg-[#f8faf5] p-4 font-mono text-sm leading-6 text-[#4d6253] outline-none focus:border-[#91ad37] focus:ring-4 focus:ring-[#e9f3c5]" aria-label="AI quiz generation prompt" />
+              </div>
+
+              <div className="mt-6 flex flex-col items-start justify-between gap-5 rounded-3xl bg-[#263b31] p-6 text-white sm:flex-row sm:items-center sm:p-8">
+                <div>
+                  <h2 className="text-xl font-bold">Start from a template</h2>
+                  <p className="mt-1 max-w-lg text-sm leading-6 text-[#c5d3c5]">Download a ready-to-edit Markdown file, then fill in your own questions and answers.</p>
+                </div>
+                <button type="button" onClick={downloadTemplate} className="shrink-0 rounded-xl bg-[#d6ed63] px-5 py-3 text-sm font-bold text-[#26331f] transition hover:bg-[#e5f69a]">Download quiz-template.md</button>
+              </div>
+            </div>
+          </section>
+        ) : quizStarted ? showSummary ? (
           <section className="flex-1 py-10 sm:py-14">
             <div className="mx-auto max-w-3xl">
               <div className="mb-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
@@ -285,7 +359,7 @@ function App() {
         </section>
         )}
 
-        {(fileName || error) && (
+        {!showGuide && (fileName || error) && (
           <section className="mb-8 rounded-2xl border border-[#d9dfd7] bg-white px-5 py-4 text-sm shadow-sm">
             {error ? <p className="font-semibold text-[#a34d3f]">{error}</p> : <p className="font-semibold text-[#49623f]">{fileName} loaded: {questions.length} questions ready{quizStarted ? ` in ${viewMode === 'single' ? 'one-question' : 'all-at-once'} mode.` : '.'}</p>}
           </section>
