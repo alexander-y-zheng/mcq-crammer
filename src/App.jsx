@@ -22,6 +22,19 @@ const sampleQuizzes = [
   { name: 'World history', fileName: 'quiz_world_history.md', content: worldHistoryQuiz },
 ]
 
+const themeOptions = [
+  ['green', 'Fresh green'],
+  ['sepia', 'Warm sepia'],
+  ['blue', 'Soft blue'],
+  ['purple', 'Intense purple'],
+]
+
+const fontOptions = [
+  ['default', 'Modern sans'],
+  ['serif', 'Classic serif'],
+  ['handwriting', 'Handwriting'],
+]
+
 const quizGenerationPrompt = `Create a multiple-choice quiz in Markdown using exactly this format:
 
 ### [Question]
@@ -101,11 +114,21 @@ function App() {
   const [copiedPrompt, setCopiedPrompt] = useState('')
   const [showGuide, setShowGuide] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(() => window.localStorage.getItem('mcq-crammer-theme') === 'dark')
+  const [theme, setTheme] = useState(() => window.localStorage.getItem('mcq-crammer-color-theme') || 'green')
+  const [font, setFont] = useState(() => window.localStorage.getItem('mcq-crammer-font') || 'default')
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   useEffect(() => {
     window.localStorage.setItem('mcq-crammer-theme', isDarkMode ? 'dark' : 'light')
   }, [isDarkMode])
+
+  useEffect(() => {
+    window.localStorage.setItem('mcq-crammer-color-theme', theme)
+  }, [theme])
+
+  useEffect(() => {
+    window.localStorage.setItem('mcq-crammer-font', font)
+  }, [font])
 
   useEffect(() => {
     if (!isConfigOpen || quizStarted) return
@@ -339,7 +362,7 @@ function App() {
   }
 
   return (
-    <main className={`min-h-screen overflow-hidden bg-[#f6f7f2] text-[#1d2925] ${isDarkMode ? 'dark-mode' : ''}`}>
+    <main className={`theme-${theme} app-font-${font} min-h-screen overflow-hidden bg-[#f6f7f2] text-[#1d2925] ${isDarkMode ? 'dark-mode' : ''}`}>
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-8 sm:px-10 lg:px-16">
         <header className="flex items-center justify-between border-b border-[#d9dfd7] pb-6">
           <button type="button" onClick={handleHomeClick} className="flex items-center gap-3 font-bold tracking-tight">
@@ -349,15 +372,6 @@ function App() {
           <div className="flex items-center gap-5">
             <button type="button" onClick={() => setShowGuide((isVisible) => !isVisible)} className="text-xs font-bold uppercase tracking-[0.14em] text-[#6c7b70] transition hover:text-[#334c3a]">
               {showGuide ? 'Back to workspace' : 'How to use AI'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsDarkMode((isEnabled) => !isEnabled)}
-              className="theme-toggle rounded-full border border-[#cbd6c9] bg-white px-3 py-2 text-xs font-bold text-[#49623f] transition hover:border-[#91ad37]"
-              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-              title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {isDarkMode ? 'Light mode' : 'Dark mode'}
             </button>
             <button
               type="button"
@@ -666,8 +680,8 @@ function App() {
 
       <>
         <button type="button" onClick={() => setIsSettingsOpen(false)} className={`fixed inset-0 z-30 cursor-default bg-[#1d2925]/30 backdrop-blur-sm transition-opacity duration-300 ${isSettingsOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`} aria-label="Close quiz settings" tabIndex={isSettingsOpen ? 0 : -1} />
-        <aside className={`fixed right-0 top-0 z-40 flex h-full w-full max-w-sm flex-col overflow-y-auto border-l border-[#d9dfd7] bg-white p-6 shadow-2xl transition-transform duration-300 ease-out sm:p-8 ${isSettingsOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full'}`} aria-labelledby="settings-title" aria-hidden={!isSettingsOpen}>
-            <div className="flex items-start justify-between gap-4 border-b border-[#d9dfd7] pb-6">
+        <aside className={`fixed right-0 top-0 z-40 flex h-full w-full max-w-sm flex-col overflow-y-auto border-l border-[#d9dfd7] bg-white p-5 shadow-2xl transition-transform duration-300 ease-out sm:p-6 ${isSettingsOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full'}`} aria-labelledby="settings-title" aria-hidden={!isSettingsOpen}>
+          <div className="flex items-start justify-between gap-4 border-b border-[#d9dfd7] pb-5">
               <div>
                 <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Workspace</p>
                 <h2 id="settings-title" className="text-2xl font-black tracking-tight text-[#26332d]">Quiz settings</h2>
@@ -675,12 +689,14 @@ function App() {
               <button type="button" onClick={() => setIsSettingsOpen(false)} className="flex size-9 items-center justify-center rounded-full border border-[#cbd6c9] bg-white text-lg text-[#49623f] transition hover:border-[#91ad37]" aria-label="Close quiz settings" title="Close quiz settings">×</button>
             </div>
 
-            <div className="space-y-8 py-8">
+            <div className="space-y-6 py-6">
+              <div>
+                <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Quiz mode</p>
               <fieldset>
                 <legend className="mb-3 text-sm font-bold text-[#33443a]">View mode</legend>
                 <div className="space-y-3">
                   {[['single', 'One question at a time'], ['all', 'All on one page']].map(([value, label]) => (
-                    <label key={value} className={`block cursor-pointer rounded-2xl border p-4 transition ${viewMode === value ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7] hover:border-[#b8c6b6]'}`}>
+                    <label key={value} className={`block cursor-pointer rounded-xl border p-3 transition ${viewMode === value ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7] hover:border-[#b8c6b6]'}`}>
                       <input type="radio" name="sidebar-view-mode" value={value} checked={viewMode === value} onChange={(event) => setViewMode(event.target.value)} className="sr-only" />
                       <span className="block text-sm font-bold text-[#33443a]">{label}</span>
                       <span className="mt-1 block text-xs leading-5 text-[#819087]">{value === 'single' ? 'Stay focused on one prompt.' : 'Scan the full quiz at once.'}</span>
@@ -694,7 +710,7 @@ function App() {
                 <div className="space-y-3">
                   {[['instant', 'Instant feedback'], ['end', 'Grade at the end']].map(([value, label]) => (
                     <div key={value} className="group relative">
-                      <label className={`block rounded-2xl border p-4 transition ${canChangeGradingMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'} ${gradingMode === value ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7]'}`}>
+                      <label className={`block rounded-xl border p-3 transition ${canChangeGradingMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'} ${gradingMode === value ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7]'}`}>
                         <input type="radio" name="sidebar-grading-mode" value={value} checked={gradingMode === value} onChange={(event) => setGradingMode(event.target.value)} disabled={!canChangeGradingMode} className="sr-only" />
                         <span className="block text-sm font-bold text-[#33443a]">{label}</span>
                         <span className="mt-1 block text-xs leading-5 text-[#819087]">{value === 'instant' ? 'Learn as you go.' : 'See your result after the last question.'}</span>
@@ -706,6 +722,41 @@ function App() {
                   ))}
                 </div>
               </fieldset>
+              </div>
+
+              <div className="border-t border-[#d9dfd7] pt-6">
+                <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Appearance</p>
+                <div className="space-y-5">
+                  <fieldset>
+                    <legend className="mb-3 text-sm font-bold text-[#33443a]">Color theme</legend>
+                    <div className="grid grid-cols-2 gap-2">
+                      {themeOptions.map(([value, label]) => (
+                        <label key={value} className={`cursor-pointer rounded-xl border p-3 transition ${theme === value ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7] hover:border-[#b8c6b6]'}`}>
+                          <input type="radio" name="color-theme" value={value} checked={theme === value} onChange={(event) => setTheme(event.target.value)} className="sr-only" />
+                          <span className="block text-xs font-bold text-[#33443a]">{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+
+                  <fieldset>
+                    <legend className="mb-3 text-sm font-bold text-[#33443a]">Font</legend>
+                    <div className="space-y-2">
+                      {fontOptions.map(([value, label]) => (
+                        <label key={value} className={`block cursor-pointer rounded-xl border p-3 transition ${font === value ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7] hover:border-[#b8c6b6]'}`}>
+                          <input type="radio" name="font" value={value} checked={font === value} onChange={(event) => setFont(event.target.value)} className="sr-only" />
+                          <span className="block text-xs font-bold text-[#33443a]">{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+
+                  <button type="button" onClick={() => setIsDarkMode((isEnabled) => !isEnabled)} className="theme-toggle flex w-full items-center justify-between rounded-xl border border-[#cbd6c9] bg-white px-3 py-2.5 text-sm font-bold text-[#49623f] transition hover:border-[#91ad37]" aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}>
+                    <span>Dark mode</span>
+                    <span>{isDarkMode ? 'On' : 'Off'}</span>
+                  </button>
+                </div>
+              </div>
             </div>
         </aside>
       </>
