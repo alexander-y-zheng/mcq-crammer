@@ -72,6 +72,13 @@ function App() {
     window.localStorage.setItem('mcq-crammer-theme', isDarkMode ? 'dark' : 'light')
   }, [isDarkMode])
 
+  useEffect(() => {
+    if (!isConfigOpen || quizStarted) return
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
+    })
+  }, [isConfigOpen, quizStarted])
+
   const saveQuiz = (content, name) => {
     const parsedQuestions = parseMarkdown(content)
     if (parsedQuestions.length === 0) {
@@ -343,7 +350,7 @@ function App() {
                   style={{ '--score-percent': `${questions.length ? (getScore() / questions.length) * 100 : 0}%` }}
                 >
                   <div className="flex size-24 flex-col items-center justify-center rounded-full bg-[#e9f3c5]">
-                    <span className="text-3xl font-black">{getScore()} / {questions.length}</span>
+                    <span className="whitespace-nowrap text-[clamp(1rem,5vw,1.875rem)] font-black leading-none tracking-tight">{getScore()} / {questions.length}</span>
                     <span className="text-xs font-bold uppercase tracking-wider">score</span>
                   </div>
                 </div>
@@ -453,14 +460,29 @@ function App() {
               onDrop={handleDrop}
               className={`rounded-3xl border-2 border-dashed bg-white p-8 shadow-[0_18px_45px_rgba(54,75,61,0.08)] transition sm:p-10 ${isDragging ? 'border-[#91ad37] bg-[#f7fbe9]' : 'border-[#cbd6c9]'}`}
             >
-              <div className="mb-8 flex size-12 items-center justify-center rounded-2xl bg-[#e9f3c5] text-2xl" aria-hidden="true">↑</div>
-              <h2 className="text-2xl font-bold tracking-tight text-[#26332d]">Drop your quiz here</h2>
-              <p className="mt-2 text-sm leading-6 text-[#738077]">Upload a Markdown file and we&apos;ll parse each question automatically.</p>
-              <label className="mt-7 inline-flex cursor-pointer items-center rounded-xl bg-[#263b31] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#17281f] focus-within:ring-4 focus-within:ring-[#d6ed63]">
-                Choose .md file
-                <input type="file" accept=".md,text/markdown" className="sr-only" onChange={(event) => handleFile(event.target.files[0])} />
-              </label>
-              <p className="mt-4 text-xs text-[#99a59c]">Maximum flexibility, zero formatting fuss.</p>
+              {fileName ? (
+                <>
+                  <div className="mb-7 flex size-16 items-center justify-center rounded-2xl border border-[#cbd6c9] bg-[#f4f9df] text-xs font-black uppercase tracking-wider text-[#49623f]" aria-hidden="true">MD</div>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Quiz uploaded</p>
+                  <h2 className="mt-2 break-words text-2xl font-bold tracking-tight text-[#26332d]">{fileName}</h2>
+                  <p className="mt-2 text-sm leading-6 text-[#738077]">{questions.length} questions ready to configure.</p>
+                  <label className="mt-7 inline-flex cursor-pointer items-center rounded-xl border border-[#cbd6c9] bg-white px-5 py-3 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37] focus-within:ring-4 focus-within:ring-[#d6ed63]">
+                    Choose another .md file
+                    <input type="file" accept=".md,text/markdown" className="sr-only" onChange={(event) => handleFile(event.target.files[0])} />
+                  </label>
+                </>
+              ) : (
+                <>
+                  <div className="mb-8 flex size-12 items-center justify-center rounded-2xl bg-[#e9f3c5] text-2xl" aria-hidden="true">↑</div>
+                  <h2 className="text-2xl font-bold tracking-tight text-[#26332d]">Drop your quiz here</h2>
+                  <p className="mt-2 text-sm leading-6 text-[#738077]">Upload a Markdown file and we&apos;ll parse each question automatically.</p>
+                  <label className="mt-7 inline-flex cursor-pointer items-center rounded-xl bg-[#263b31] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#17281f] focus-within:ring-4 focus-within:ring-[#d6ed63]">
+                    Choose .md file
+                    <input type="file" accept=".md,text/markdown" className="sr-only" onChange={(event) => handleFile(event.target.files[0])} />
+                  </label>
+                  <p className="mt-4 text-xs text-[#99a59c]">Maximum flexibility, zero formatting fuss.</p>
+                </>
+              )}
             </div>
 
             <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-[0.16em] text-[#97a39a]"><span className="h-px flex-1 bg-[#d9dfd7]" />or use a sample<span className="h-px flex-1 bg-[#d9dfd7]" /></div>
@@ -480,23 +502,12 @@ function App() {
         </section>
         )}
 
-        {!showGuide && !quizStarted && (fileName || error) && (
-          <section className="mb-8 rounded-2xl border border-[#d9dfd7] bg-white px-5 py-4 text-sm shadow-sm">
-            {error ? <p className="font-semibold text-[#a34d3f]">{error}</p> : <p className="font-semibold text-[#49623f]">{fileName} loaded: {questions.length} questions ready{quizStarted ? ` in ${viewMode === 'single' ? 'one-question' : 'all-at-once'} mode.` : '.'}</p>}
-          </section>
-        )}
-      </div>
-
-      {isConfigOpen && (
-        <div className="fixed inset-0 z-10 flex items-center justify-center bg-[#1d2925]/45 px-5 py-8 backdrop-blur-sm" role="presentation">
-          <section className="w-full max-w-lg rounded-3xl bg-white p-7 shadow-2xl sm:p-9" role="dialog" aria-modal="true" aria-labelledby="quiz-settings-title">
-            <div className="mb-8 flex items-start justify-between gap-6">
-              <div>
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Quiz ready</p>
-                <h2 id="quiz-settings-title" className="text-3xl font-black tracking-tight text-[#26332d]">Set your study mode</h2>
-                <p className="mt-2 text-sm leading-6 text-[#738077]">Choose how you want to move through {questions.length} questions.</p>
-              </div>
-              <button type="button" onClick={() => setIsConfigOpen(false)} className="flex size-9 shrink-0 items-center justify-center rounded-full text-xl text-[#78877d] transition hover:bg-[#f0f3ed] hover:text-[#26332d]" aria-label="Close quiz settings">×</button>
+        {!showGuide && !quizStarted && isConfigOpen && (
+          <section className="mx-auto mb-8 w-full max-w-3xl rounded-3xl border border-[#d9dfd7] bg-white p-7 shadow-[0_18px_45px_rgba(54,75,61,0.08)] sm:p-9" aria-labelledby="quiz-settings-title">
+            <div className="mb-8">
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Quiz ready</p>
+              <h2 id="quiz-settings-title" className="text-3xl font-black tracking-tight text-[#26332d]">Set your study mode</h2>
+              <p className="mt-2 text-sm leading-6 text-[#738077]">Choose how you want to move through {questions.length} questions.</p>
             </div>
 
             <div className="space-y-6">
@@ -529,8 +540,14 @@ function App() {
 
             <button type="button" onClick={startQuiz} className="mt-8 w-full rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Start Quiz</button>
           </section>
-        </div>
-      )}
+        )}
+
+        {!showGuide && !quizStarted && (fileName || error) && (
+          <section className="mb-8 rounded-2xl border border-[#d9dfd7] bg-white px-5 py-4 text-sm shadow-sm">
+            {error ? <p className="font-semibold text-[#a34d3f]">{error}</p> : <p className="font-semibold text-[#49623f]">{fileName} loaded: {questions.length} questions ready{quizStarted ? ` in ${viewMode === 'single' ? 'one-question' : 'all-at-once'} mode.` : '.'}</p>}
+          </section>
+        )}
+      </div>
 
       {showSubmitConfirmation && (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#1d2925]/45 px-5 py-8 backdrop-blur-sm" role="presentation">
