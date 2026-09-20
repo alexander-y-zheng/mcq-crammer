@@ -20,6 +20,9 @@ function App() {
   const [viewMode, setViewMode] = useState('single')
   const [gradingMode, setGradingMode] = useState('instant')
   const [quizStarted, setQuizStarted] = useState(false)
+  const [answers, setAnswers] = useState({})
+  const [currentQuestion, setCurrentQuestion] = useState(0)
+  const [isSubmitted, setIsSubmitted] = useState(false)
 
   const saveQuiz = (content, name) => {
     const parsedQuestions = parseMarkdown(content)
@@ -34,6 +37,8 @@ function App() {
     setFileName(name)
     setError('')
     setQuizStarted(false)
+    setAnswers({})
+    setIsSubmitted(false)
     setIsConfigOpen(true)
   }
 
@@ -53,6 +58,62 @@ function App() {
     handleFile(event.dataTransfer.files[0])
   }
 
+  const startQuiz = () => {
+    setAnswers({})
+    setCurrentQuestion(0)
+    setIsSubmitted(false)
+    setQuizStarted(true)
+    setIsConfigOpen(false)
+  }
+
+  const selectAnswer = (questionIndex, optionIndex) => {
+    if (gradingMode === 'instant' && answers[questionIndex] !== undefined) return
+    setAnswers((currentAnswers) => ({ ...currentAnswers, [questionIndex]: optionIndex }))
+  }
+
+  const getScore = () => questions.reduce((score, question, index) => {
+    const selectedOption = question.options[answers[index]]
+    return score + (selectedOption?.isCorrect ? 1 : 0)
+  }, 0)
+
+  const renderQuestion = (question, questionIndex) => {
+    const selectedIndex = answers[questionIndex]
+    const hasAnswered = selectedIndex !== undefined
+    const showFeedback = gradingMode === 'instant' && hasAnswered
+    const showResults = gradingMode === 'end' && isSubmitted
+
+    return (
+      <article key={questionIndex} className="rounded-3xl border border-[#d9dfd7] bg-white p-6 shadow-[0_12px_30px_rgba(54,75,61,0.06)] sm:p-8">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Question {questionIndex + 1}</span>
+          {hasAnswered && <span className="text-xs font-semibold text-[#819087]">Answer selected</span>}
+        </div>
+        <h2 className="text-xl font-bold leading-8 tracking-tight text-[#26332d] sm:text-2xl">{question.question}</h2>
+        <div className="mt-7 space-y-3">
+          {question.options.map((option, optionIndex) => {
+            const isSelected = selectedIndex === optionIndex
+            const isCorrect = option.isCorrect
+            let optionStyle = 'border-[#d9dfd7] hover:border-[#b8c6b6] hover:bg-[#fafcf7]'
+            if (showFeedback && isSelected) optionStyle = isCorrect ? 'border-[#72a666] bg-[#eaf6e7] text-[#38643a]' : 'border-[#d27869] bg-[#fff0ed] text-[#98493e]'
+            if (showFeedback && !isSelected && isCorrect) optionStyle = 'border-[#72a666] bg-[#eaf6e7] text-[#38643a]'
+            if (gradingMode === 'end' && isSelected && !isSubmitted) optionStyle = 'border-[#91ad37] bg-[#f4f9df] text-[#49623f] ring-2 ring-[#e9f3c5]'
+            if (showResults && isSelected) optionStyle = isCorrect ? 'border-[#72a666] bg-[#eaf6e7] text-[#38643a]' : 'border-[#d27869] bg-[#fff0ed] text-[#98493e]'
+
+            return (
+              <button key={optionIndex} type="button" disabled={showFeedback || isSubmitted} onClick={() => selectAnswer(questionIndex, optionIndex)} className={`flex w-full items-start gap-4 rounded-2xl border px-4 py-4 text-left text-sm font-semibold transition disabled:cursor-default ${optionStyle}`}>
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-current text-xs">{String.fromCharCode(65 + optionIndex)}</span>
+                <span className="pt-0.5 leading-6">{option.text}</span>
+              </button>
+            )
+          })}
+        </div>
+        {(showFeedback || showResults) && question.explanation && (
+          <div className="mt-6 rounded-2xl bg-[#f4f7ef] px-4 py-4 text-sm leading-6 text-[#5e7063]"><span className="font-bold text-[#334c3a]">Explanation: </span>{question.explanation}</div>
+        )}
+      </article>
+    )
+  }
+
   return (
     <main className="min-h-screen overflow-hidden bg-[#f6f7f2] text-[#1d2925]">
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-8 sm:px-10 lg:px-16">
@@ -64,6 +125,40 @@ function App() {
           <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6c7b70]">Quiz workspace</span>
         </header>
 
+        {quizStarted ? (
+          <section className="flex-1 py-10 sm:py-14">
+            <div className="mb-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+              <div>
+                <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#788c3d]">{fileName}</p>
+                <h1 className="text-4xl font-black tracking-[-0.04em] text-[#1d2925] sm:text-6xl">Let&apos;s get started.</h1>
+              </div>
+              <div className="rounded-xl bg-white px-4 py-3 text-right text-sm font-semibold text-[#617067] shadow-sm">
+                {viewMode === 'single' ? `Question ${currentQuestion + 1} of ${questions.length}` : `${Object.keys(answers).length} of ${questions.length} answered`}
+              </div>
+            </div>
+
+            {viewMode === 'single' ? (
+              <div className="mx-auto max-w-3xl">
+                {renderQuestion(questions[currentQuestion], currentQuestion)}
+                <div className="mt-6 flex justify-between gap-4">
+                  <button type="button" disabled={currentQuestion === 0} onClick={() => setCurrentQuestion((index) => index - 1)} className="rounded-xl border border-[#cbd6c9] bg-white px-5 py-3 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37] disabled:cursor-not-allowed disabled:opacity-40">Previous</button>
+                  <button type="button" disabled={currentQuestion === questions.length - 1} onClick={() => setCurrentQuestion((index) => index + 1)} className="rounded-xl bg-[#263b31] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#17281f] disabled:cursor-not-allowed disabled:opacity-40">Next question</button>
+                </div>
+              </div>
+            ) : (
+              <div className="mx-auto max-w-3xl space-y-6">
+                {questions.map((question, index) => renderQuestion(question, index))}
+              </div>
+            )}
+
+            {gradingMode === 'end' && (
+              <div className="mx-auto mt-10 flex max-w-3xl flex-col items-center gap-4 border-t border-[#d9dfd7] pt-8">
+                {isSubmitted && <p className="text-lg font-bold text-[#49623f]">You scored {getScore()} out of {questions.length}.</p>}
+                <button type="button" onClick={() => setIsSubmitted(true)} disabled={isSubmitted || Object.keys(answers).length === 0} className="rounded-xl bg-[#263b31] px-8 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] disabled:cursor-not-allowed disabled:opacity-40">{isSubmitted ? 'Quiz submitted' : 'Submit Quiz'}</button>
+              </div>
+            )}
+          </section>
+        ) : (
         <section className="grid flex-1 items-center gap-12 py-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
           <div>
             <p className="mb-5 text-sm font-bold uppercase tracking-[0.2em] text-[#788c3d]">Study smarter</p>
@@ -103,6 +198,7 @@ function App() {
             </select>
           </div>
         </section>
+        )}
 
         {(fileName || error) && (
           <section className="mb-8 rounded-2xl border border-[#d9dfd7] bg-white px-5 py-4 text-sm shadow-sm">
@@ -151,7 +247,7 @@ function App() {
               </fieldset>
             </div>
 
-            <button type="button" onClick={() => { setQuizStarted(true); setIsConfigOpen(false) }} className="mt-8 w-full rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Start Quiz</button>
+            <button type="button" onClick={startQuiz} className="mt-8 w-full rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Start Quiz</button>
           </section>
         </div>
       )}
