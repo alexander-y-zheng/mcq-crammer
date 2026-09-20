@@ -8,6 +8,10 @@ export function parseMarkdown(text) {
 
 	const addCurrentQuestion = () => {
 		if (currentQuestion) {
+			if (currentQuestion.questionDetails.length > 0) {
+				currentQuestion.question = [currentQuestion.question, ...currentQuestion.questionDetails].join('\n').trim()
+			}
+			delete currentQuestion.questionDetails
 			questions.push(currentQuestion)
 		}
 	}
@@ -19,6 +23,7 @@ export function parseMarkdown(text) {
 			addCurrentQuestion()
 			currentQuestion = {
 				question: headingMatch[1].trim(),
+				questionDetails: [],
 				options: [],
 				explanation: '',
 			}
@@ -31,6 +36,10 @@ export function parseMarkdown(text) {
 
 		const optionMatch = line.match(/^\s*-\s*\[([ xX])\]\s+(.+?)\s*$/)
 		if (optionMatch) {
+			if (currentQuestion.questionDetails.length > 0) {
+				currentQuestion.question = [currentQuestion.question, ...currentQuestion.questionDetails].join('\n').trim()
+				currentQuestion.questionDetails = []
+			}
 			currentQuestion.options.push({
 				text: optionMatch[2].trim(),
 				isCorrect: optionMatch[1].toLowerCase() === 'x',
@@ -41,6 +50,11 @@ export function parseMarkdown(text) {
 		const explanationMatch = line.match(/^\s*>\s*Explanation:\s*(.*?)\s*$/i)
 		if (explanationMatch) {
 			currentQuestion.explanation = explanationMatch[1].trim()
+			continue
+		}
+
+		if (currentQuestion.options.length === 0 && line.trim()) {
+			currentQuestion.questionDetails.push(line)
 		}
 	}
 

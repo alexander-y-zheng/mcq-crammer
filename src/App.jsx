@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import rehypeKatex from 'rehype-katex'
+import remarkMath from 'remark-math'
 import { parseMarkdown } from './quizParser'
+import 'katex/dist/katex.min.css'
 import biologyQuiz from './quiz_examples/quiz_biology_basics.md?raw'
 import financeQuiz from './quiz_examples/quiz_finance_tvm.md?raw'
 import pythonQuiz from './quiz_examples/quiz_python_basics.md?raw'
@@ -43,6 +47,25 @@ const quizTemplate = `# My Quiz
 - [ ] Incorrect answer
 > Explanation: Explain why the correct answer is right.
 `
+
+function MarkdownContent({ children, className = '' }) {
+  return (
+    <ReactMarkdown
+      className={className}
+      remarkPlugins={[remarkMath]}
+      rehypePlugins={[rehypeKatex]}
+      components={{
+        p: ({ children: content }) => <p className="m-0">{content}</p>,
+        pre: ({ children: content }) => <pre className="my-3 overflow-x-auto rounded-xl bg-[#263b31] p-4 text-sm text-[#e8eee8]">{content}</pre>,
+        code: ({ children: content, className: codeClassName }) => codeClassName
+          ? <code className={codeClassName}>{content}</code>
+          : <code className="rounded bg-[#eef3e8] px-1.5 py-0.5 font-mono text-[0.9em] text-[#49623f]">{content}</code>,
+      }}
+    >
+      {children}
+    </ReactMarkdown>
+  )
+}
 
 function App() {
   const [questions, setQuestions] = useState([])
@@ -258,7 +281,7 @@ function App() {
           <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Question {questionIndex + 1}</span>
           {hasAnswered && <span className="text-xs font-semibold text-[#819087]">Answer selected</span>}
         </div>
-        <h2 className="text-xl font-bold leading-8 tracking-tight text-[#26332d] sm:text-2xl">{question.question}</h2>
+        <div className="text-xl font-bold leading-8 tracking-tight text-[#26332d] sm:text-2xl"><MarkdownContent>{question.question}</MarkdownContent></div>
         <div className="mt-7 space-y-3">
           {question.options.map((option, optionIndex) => {
             const isSelected = selectedIndex === optionIndex
@@ -272,13 +295,13 @@ function App() {
             return (
               <button key={optionIndex} type="button" disabled={showFeedback || isSubmitted} onClick={() => selectAnswer(questionIndex, optionIndex)} className={`flex w-full items-start gap-4 rounded-2xl border px-4 py-4 text-left text-sm font-semibold transition disabled:cursor-default ${optionStyle}`}>
                 <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-current text-xs">{String.fromCharCode(65 + optionIndex)}</span>
-                <span className="pt-0.5 leading-6">{option.text}</span>
+                <span className="pt-0.5 leading-6"><MarkdownContent>{option.text}</MarkdownContent></span>
               </button>
             )
           })}
         </div>
         {(showFeedback || showResults) && question.explanation && (
-          <div className="mt-6 rounded-2xl bg-[#f4f7ef] px-4 py-4 text-sm leading-6 text-[#5e7063]"><span className="font-bold text-[#334c3a]">Explanation: </span>{question.explanation}</div>
+          <div className="mt-6 rounded-2xl bg-[#f4f7ef] px-4 py-4 text-sm leading-6 text-[#5e7063]"><span className="font-bold text-[#334c3a]">Explanation: </span><MarkdownContent>{question.explanation}</MarkdownContent></div>
         )}
       </article>
     )
