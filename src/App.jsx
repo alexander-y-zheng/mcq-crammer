@@ -60,7 +60,9 @@ function App() {
   const [unansweredCount, setUnansweredCount] = useState(0)
   const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false)
   const [showResetConfirmation, setShowResetConfirmation] = useState(false)
+  const [showRetryConfirmation, setShowRetryConfirmation] = useState(false)
   const [showSummary, setShowSummary] = useState(false)
+  const [summaryAnimationKey, setSummaryAnimationKey] = useState(0)
   const [reviewAll, setReviewAll] = useState(false)
   const [copiedPrompt, setCopiedPrompt] = useState('')
   const [showGuide, setShowGuide] = useState(false)
@@ -87,6 +89,7 @@ function App() {
     setIsSubmitted(false)
     setUnansweredCount(0)
     setShowSubmitConfirmation(false)
+    setShowRetryConfirmation(false)
     setShowSummary(false)
     setReviewAll(false)
     setCopiedPrompt('')
@@ -116,6 +119,7 @@ function App() {
     setIsSubmitted(false)
     setUnansweredCount(0)
     setShowSubmitConfirmation(false)
+    setShowRetryConfirmation(false)
     setShowSummary(false)
     setReviewAll(false)
     setQuizStarted(true)
@@ -134,6 +138,7 @@ function App() {
     setUnansweredCount(0)
     setShowSubmitConfirmation(false)
     setShowResetConfirmation(false)
+    setShowRetryConfirmation(false)
     setShowSummary(false)
     setReviewAll(false)
     setIsConfigOpen(false)
@@ -142,6 +147,11 @@ function App() {
 
   const handleHomeClick = () => {
     if (quizStarted) setShowResetConfirmation(true)
+  }
+
+  const confirmRetryQuiz = () => {
+    setShowRetryConfirmation(false)
+    startQuiz()
   }
 
   const smoothScrollTo = (targetTop) => {
@@ -184,12 +194,17 @@ function App() {
       return
     }
     setIsSubmitted(true)
-    setShowSummary(true)
+    showSummaryPage()
   }
 
   const confirmSubmitQuiz = () => {
     setShowSubmitConfirmation(false)
     setIsSubmitted(true)
+    showSummaryPage()
+  }
+
+  const showSummaryPage = () => {
+    setSummaryAnimationKey((key) => key + 1)
     setShowSummary(true)
   }
 
@@ -322,9 +337,15 @@ function App() {
                   <h1 className="text-4xl font-black tracking-[-0.04em] text-[#1d2925] sm:text-6xl">Your results.</h1>
                   <p className="mt-3 text-sm text-[#738077]">{fileName}</p>
                 </div>
-                <div className="flex size-32 flex-col items-center justify-center rounded-full bg-[#e9f3c5] text-center text-[#334c3a]">
-                  <span className="text-3xl font-black">{getScore()} / {questions.length}</span>
-                  <span className="text-xs font-bold uppercase tracking-wider">score</span>
+                <div
+                  key={summaryAnimationKey}
+                  className="score-ring flex size-32 flex-col items-center justify-center rounded-full text-center text-[#334c3a]"
+                  style={{ '--score-percent': `${questions.length ? (getScore() / questions.length) * 100 : 0}%` }}
+                >
+                  <div className="flex size-24 flex-col items-center justify-center rounded-full bg-[#e9f3c5]">
+                    <span className="text-3xl font-black">{getScore()} / {questions.length}</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">score</span>
+                  </div>
                 </div>
               </div>
 
@@ -347,7 +368,7 @@ function App() {
                   })}
                 </div>
               ) : (
-                <div className="rounded-2xl bg-[#eaf6e7] p-6 text-center font-bold text-[#38643a]">Perfect score. Every answer is correct.</div>
+                <div className="rounded-2xl bg-[#eaf6e7] p-6 text-center font-bold text-[#38643a]">Perfect score. Every answer is correct!</div>
               )}
 
               {missedQuestions.length > 0 && (
@@ -368,7 +389,10 @@ function App() {
                 </div>
               )}
 
-              <button type="button" onClick={() => { setShowSummary(false); setReviewAll(true) }} className="mt-10 w-full rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Back to Quiz</button>
+              <div className="mt-10 space-y-3">
+                <button type="button" onClick={() => { setShowSummary(false); setReviewAll(true) }} className="w-full rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Back to Quiz</button>
+                <button type="button" onClick={() => setShowRetryConfirmation(true)} className="w-full rounded-xl border border-[#cbd6c9] bg-white px-5 py-3.5 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Retry Quiz</button>
+              </div>
             </div>
           </section>
         ) : (
@@ -382,7 +406,7 @@ function App() {
                 <div className="rounded-xl bg-white px-4 py-3 text-right text-sm font-semibold text-[#617067] shadow-sm">
                   {viewMode === 'single' && !reviewAll ? `Question ${currentQuestion + 1} of ${questions.length}` : `${Object.keys(answers).length} of ${questions.length} answered`}
                 </div>
-                {reviewAll && <button type="button" onClick={() => setShowSummary(true)} className="rounded-xl border border-[#cbd6c9] bg-white px-4 py-3 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Show Summary</button>}
+                {reviewAll && <button type="button" onClick={showSummaryPage} className="rounded-xl border border-[#cbd6c9] bg-white px-4 py-3 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Show Summary</button>}
               </div>
             </div>
 
@@ -408,8 +432,9 @@ function App() {
             )}
 
             {reviewAll && (
-              <div className="mx-auto mt-10 flex max-w-3xl justify-center border-t border-[#d9dfd7] pt-8">
-                <button type="button" onClick={() => setShowSummary(true)} className="rounded-xl border border-[#cbd6c9] bg-white px-5 py-3.5 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Show Summary</button>
+              <div className="mx-auto mt-10 flex max-w-3xl flex-col items-center gap-3 border-t border-[#d9dfd7] pt-8">
+                <button type="button" onClick={showSummaryPage} className="rounded-xl border border-[#cbd6c9] bg-white px-5 py-3.5 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Show Summary</button>
+                <button type="button" onClick={() => setShowRetryConfirmation(true)} className="rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Retry Quiz</button>
               </div>
             )}
           </section>
@@ -530,6 +555,20 @@ function App() {
             <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button type="button" onClick={() => setShowResetConfirmation(false)} className="rounded-xl border border-[#cbd6c9] bg-white px-5 py-3.5 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Cancel</button>
               <button type="button" onClick={returnHome} className="rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Return Home</button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {showRetryConfirmation && (
+        <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#1d2925]/45 px-5 py-8 backdrop-blur-sm" role="presentation">
+          <section className="w-full max-w-lg rounded-3xl bg-white p-7 shadow-2xl sm:p-9" role="dialog" aria-modal="true" aria-labelledby="retry-confirmation-title">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Start over?</p>
+            <h2 id="retry-confirmation-title" className="text-3xl font-black tracking-tight text-[#26332d]">Retry this quiz?</h2>
+            <p className="mt-3 text-sm leading-6 text-[#738077]">This will completely reset the quiz and wipe all results. Your current answers and score will be lost.</p>
+            <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setShowRetryConfirmation(false)} className="rounded-xl border border-[#cbd6c9] bg-white px-5 py-3.5 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Cancel</button>
+              <button type="button" onClick={confirmRetryQuiz} className="rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Retry Quiz</button>
             </div>
           </section>
         </div>

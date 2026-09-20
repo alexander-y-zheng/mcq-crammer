@@ -7,3 +7,20 @@ body {
 #root {
   min-height: 100svh;
 }
+
+@property --score-percent {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
+.score-ring {
+  background: conic-gradient(#91ad37 var(--score-percent), #d9dfd7 var(--score-percent));
+  animation: score-ring-fill 1.2s ease-out both;
+}
+
+@keyframes score-ring-fill {
+  from {
+    --score-percent: 0%;
+  }
+}
