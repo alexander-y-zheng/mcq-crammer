@@ -1,4 +1,4 @@
-function QuizSetupView({ questionsCount, viewMode, gradingMode, onViewModeChange, onGradingModeChange, onStart }) {
+function QuizSetupView({ questionsCount, viewMode, gradingMode, randomizeAnswers, onViewModeChange, onGradingModeChange, onRandomizeAnswersChange, onStart }) {
   return (
     <section className="mx-auto mb-8 w-full max-w-3xl rounded-3xl border border-[#d9dfd7] bg-white p-7 shadow-[0_18px_45px_rgba(54,75,61,0.08)] sm:p-9" aria-labelledby="quiz-settings-title">
       <div className="mb-8">
@@ -33,6 +33,14 @@ function QuizSetupView({ questionsCount, viewMode, gradingMode, onViewModeChange
             ))}
           </div>
         </fieldset>
+
+        <label className={`flex cursor-pointer items-center justify-between gap-4 rounded-2xl border p-4 transition ${randomizeAnswers ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7] hover:border-[#b8c6b6]'}`}>
+          <span>
+            <span className="block text-sm font-bold text-[#33443a]">Randomize answer order</span>
+            <span className="mt-1 block text-xs leading-5 text-[#819087]">Mix the answer choices for each question.</span>
+          </span>
+          <input type="checkbox" checked={randomizeAnswers} onChange={(event) => onRandomizeAnswersChange(event.target.checked)} className="size-5 accent-[#788c3d]" />
+        </label>
       </div>
 
       <button type="button" onClick={onStart} className="mt-8 w-full rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Start Quiz</button>

@@ -14,6 +14,27 @@ import useQuizSession from './hooks/useQuizSession'
 import useWorkspacePreferences from './hooks/useWorkspacePreferences'
 import 'katex/dist/katex.min.css'
 
+const createSeededRandom = (seed) => () => {
+  seed += 0x6D2B79F5
+  let value = seed
+  value = Math.imul(value ^ (value >>> 15), value | 1)
+  value ^= value + Math.imul(value ^ (value >>> 7), value | 61)
+  return ((value ^ (value >>> 14)) >>> 0) / 4294967296
+}
+
+const shuffleAnswers = (questionsToShuffle, seed) => {
+  const random = createSeededRandom(seed)
+
+  return questionsToShuffle.map((question) => {
+  const shuffledOptions = [...question.options]
+  for (let index = shuffledOptions.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(random() * (index + 1))
+    ;[shuffledOptions[index], shuffledOptions[randomIndex]] = [shuffledOptions[randomIndex], shuffledOptions[index]]
+  }
+  return { ...question, options: shuffledOptions }
+  })
+}
+
 function App() {
   const [questions, setQuestions] = useState([])
   const [fileName, setFileName] = useState('')
@@ -23,6 +44,7 @@ function App() {
   const [isConfigOpen, setIsConfigOpen] = useState(false)
   const [viewMode, setViewMode] = useState('single')
   const [gradingMode, setGradingMode] = useState('instant')
+  const [randomizeAnswers, setRandomizeAnswers] = useState(false)
   const [showResetConfirmation, setShowResetConfirmation] = useState(false)
   const [copiedPrompt, setCopiedPrompt] = useState('')
   const [showGuide, setShowGuide] = useState(false)
@@ -110,8 +132,18 @@ function App() {
   }
 
   const startQuiz = () => {
+    if (randomizeAnswers) {
+      setQuestions((currentQuestions) => shuffleAnswers(currentQuestions, Date.now()))
+    }
     startQuizSession()
     setIsConfigOpen(false)
+  }
+
+  const retryQuiz = () => {
+    if (randomizeAnswers) {
+      setQuestions((currentQuestions) => shuffleAnswers(currentQuestions, Date.now()))
+    }
+    confirmRetryQuiz()
   }
 
   const returnHome = () => {
@@ -234,8 +266,10 @@ function App() {
             questionsCount={questions.length}
             viewMode={viewMode}
             gradingMode={gradingMode}
+            randomizeAnswers={randomizeAnswers}
             onViewModeChange={setViewMode}
             onGradingModeChange={setGradingMode}
+            onRandomizeAnswersChange={setRandomizeAnswers}
             onStart={startQuiz}
           />
         )}
@@ -283,7 +317,7 @@ function App() {
           confirmLabel="Retry Quiz"
           titleId="retry-confirmation-title"
           onCancel={() => setShowRetryConfirmation(false)}
-          onConfirm={confirmRetryQuiz}
+          onConfirm={retryQuiz}
         />
       )}
 
