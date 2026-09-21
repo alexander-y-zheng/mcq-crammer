@@ -37,6 +37,7 @@ const shuffleAnswers = (questionsToShuffle, seed) => {
 
 function App() {
   const [questions, setQuestions] = useState([])
+  const [isScrolled, setIsScrolled] = useState(false)
   const [fileName, setFileName] = useState('')
   const [selectedSample, setSelectedSample] = useState('')
   const [isDragging, setIsDragging] = useState(false)
@@ -97,6 +98,13 @@ function App() {
       window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
     })
   }, [isConfigOpen, quizStarted])
+
+  useEffect(() => {
+    const updateScrollState = () => setIsScrolled(window.scrollY > 24)
+    updateScrollState()
+    window.addEventListener('scroll', updateScrollState, { passive: true })
+    return () => window.removeEventListener('scroll', updateScrollState)
+  }, [])
 
   const saveQuiz = (content, name) => {
     const parsedQuestions = parseMarkdown(content)
@@ -285,6 +293,17 @@ function App() {
       <footer className="border-t border-[#d9dfd7] px-6 py-5 text-center text-xs text-[#819087] sm:px-10 lg:px-16">
         <p>Made by Alex Zheng, 2026. Have feedback? <a href="https://neu.co1.qualtrics.com/jfe/form/SV_9ELn11adEWyNouG" target="_blank" rel="noreferrer" className="font-bold text-[#49623f] underline decoration-[#cbd6c9] underline-offset-2 transition hover:text-[#788c3d]">Let me know here!</a></p>
       </footer>
+
+      <button
+        type="button"
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className={`fixed bottom-5 right-5 z-10 flex size-10 items-center justify-center rounded-full border border-[#cbd6c9] bg-white/90 text-xl text-[#49623f] shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-[#91ad37] hover:text-[#788c3d] focus:outline-none focus:ring-4 focus:ring-[#e9f3c5] sm:bottom-7 sm:right-7 ${isScrolled ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0'}`}
+        aria-label="Bring page to top"
+        title="Bring page to top"
+        tabIndex={isScrolled ? 0 : -1}
+      >
+        ↑
+      </button>
 
       {showSubmitConfirmation && (
         <ConfirmationDialog
