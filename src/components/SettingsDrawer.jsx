@@ -4,13 +4,16 @@ function SettingsDrawer({
   isOpen,
   viewMode,
   gradingMode,
+  randomizeAnswers,
   theme,
   font,
   isDarkMode,
   canChangeGradingMode,
+  canChangeRandomizeAnswers,
   onClose,
   onViewModeChange,
   onGradingModeChange,
+  onRandomizeAnswersChange,
   onThemeChange,
   onFontChange,
   onDarkModeToggle,
@@ -60,6 +63,19 @@ function SettingsDrawer({
                 ))}
               </div>
             </fieldset>
+
+            <div className="group relative mt-5">
+              <label className={`flex items-center justify-between gap-4 rounded-xl border p-3 transition ${canChangeRandomizeAnswers ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'} ${randomizeAnswers ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7]'}`}>
+                <span>
+                  <span className="block text-sm font-bold text-[#33443a]">Randomize answer order</span>
+                  <span className="mt-1 block text-xs leading-5 text-[#819087]">Mix choices for each question.</span>
+                </span>
+                <input type="checkbox" checked={randomizeAnswers} onChange={(event) => onRandomizeAnswersChange(event.target.checked)} disabled={!canChangeRandomizeAnswers} className="size-5 accent-[#788c3d]" />
+              </label>
+              {!canChangeRandomizeAnswers && (
+                <span role="tooltip" className="pointer-events-none absolute bottom-full left-4 z-10 mb-2 w-max max-w-[calc(100% - 2rem)] rounded-xl bg-[#263b31] px-3 py-2 text-xs font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">Answer order cannot be changed during a quiz.</span>
+              )}
+            </div>
           </div>
 
           <div className="border-t border-[#d9dfd7] pt-6">

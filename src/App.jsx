@@ -186,6 +186,7 @@ function App() {
   }
 
   const canChangeGradingMode = !quizStarted || isSubmitted
+  const canChangeRandomizeAnswers = !quizStarted || isSubmitted
 
   return (
     <main className={`theme-${theme} app-font-${font} flex min-h-screen flex-col overflow-hidden bg-[#f6f7f2] text-[#1d2925] ${isDarkMode ? 'dark-mode' : ''}`}>
@@ -329,9 +330,12 @@ function App() {
         font={font}
         isDarkMode={isDarkMode}
         canChangeGradingMode={canChangeGradingMode}
+        randomizeAnswers={randomizeAnswers}
+        canChangeRandomizeAnswers={canChangeRandomizeAnswers}
         onClose={() => setIsSettingsOpen(false)}
         onViewModeChange={setViewMode}
         onGradingModeChange={setGradingMode}
+        onRandomizeAnswersChange={setRandomizeAnswers}
         onThemeChange={setTheme}
         onFontChange={setFont}
         onDarkModeToggle={() => setIsDarkMode((isEnabled) => !isEnabled)}
