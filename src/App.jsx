@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import { parseMarkdown } from './quizParser'
-import QuizQuestion from './components/QuizQuestion'
 import ConfirmationDialog from './components/ConfirmationDialog'
 import AppHeader from './components/AppHeader'
+import SettingsDrawer from './components/SettingsDrawer'
 import GuideView from './views/GuideView'
+import HomeView from './views/HomeView'
+import QuizSetupView from './views/QuizSetupView'
+import QuizView from './views/QuizView'
+import ResultsView from './views/ResultsView'
 import sampleQuizzes from './data/sampleQuizzes'
 import { quizGenerationPrompt, quizTemplate } from './data/quizPrompts'
-import { themeOptions, fontOptions } from './data/settingsOptions'
 import 'katex/dist/katex.min.css'
 
 function App() {
@@ -254,239 +257,71 @@ function App() {
             onDownloadTemplate={downloadTemplate}
           />
         ) : quizStarted ? showSummary ? (
-          <section className="flex-1 py-10 sm:py-14">
-            <div className="mx-auto max-w-3xl">
-              <div className="mb-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-                <div>
-                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#788c3d]">Quiz complete</p>
-                  <h1 className="text-4xl font-black tracking-[-0.04em] text-[#1d2925] sm:text-6xl">Your results.</h1>
-                  <p className="mt-3 text-sm text-[#738077]">{fileName}</p>
-                </div>
-                <div
-                  key={summaryAnimationKey}
-                  className="score-ring flex size-32 flex-col items-center justify-center rounded-full text-center text-[#334c3a]"
-                  style={{ '--score-percent': `${questions.length ? (getScore() / questions.length) * 100 : 0}%` }}
-                >
-                  <div className="flex size-24 flex-col items-center justify-center rounded-full bg-[#e9f3c5]">
-                    <span className="whitespace-nowrap text-[clamp(1rem,5vw,1.875rem)] font-black leading-none tracking-tight">{getScore()} / {questions.length}</span>
-                    <span className="text-xs font-bold uppercase tracking-wider">score</span>
-                  </div>
-                </div>
-              </div>
-
-              {missedQuestions.length > 0 ? (
-                <div className="space-y-4">
-                  <button type="button" onClick={() => setShowMissedQuestions((isVisible) => !isVisible)} aria-expanded={showMissedQuestions} aria-controls="missed-questions" className="flex w-full items-center justify-between gap-4 text-left">
-                    <span className="text-lg font-bold text-[#33443a]">Review your missed questions</span>
-                    <span className="text-xl font-semibold text-[#788c3d]" aria-hidden="true">{showMissedQuestions ? '-' : '+'}</span>
-                  </button>
-                  {showMissedQuestions && (
-                    <div id="missed-questions" className="space-y-4">
-                      {missedQuestions.map((question) => {
-                        const questionIndex = questions.indexOf(question)
-                        const selectedAnswer = question.options[answers[questionIndex]]?.text || 'No answer selected'
-                        const correctAnswer = question.options.find((option) => option.isCorrect)?.text || 'No correct answer marked'
-                        return (
-                          <article key={questionIndex} className="rounded-2xl border border-[#ead7d2] bg-white p-5 shadow-sm">
-                            <p className="font-bold leading-6 text-[#33443a]">{questionIndex + 1}. {question.question}</p>
-                            <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-                              <div className="rounded-xl bg-[#fff0ed] px-4 py-3 text-[#98493e]"><span className="font-bold">You picked:</span> {selectedAnswer}</div>
-                              <div className="rounded-xl bg-[#eaf6e7] px-4 py-3 text-[#38643a]"><span className="font-bold">Right answer:</span> {correctAnswer}</div>
-                            </div>
-                          </article>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="rounded-2xl bg-[#eaf6e7] p-6 text-center font-bold text-[#38643a]">Perfect score. Every answer is correct!</div>
-              )}
-
-              {missedQuestions.length > 0 && (
-                <div className="mt-10 space-y-5">
-                  <h2 className="text-lg font-bold text-[#33443a]">Keep learning</h2>
-                  {[
-                    ['explain', 'Explain my mistakes', explanationPrompt],
-                    ['teach', 'Teach me the missed concepts', teachingPrompt],
-                  ].map(([promptName, title, prompt]) => (
-                    <div key={promptName}>
-                      <div className="mb-2 flex items-center justify-between gap-4">
-                        <label htmlFor={`${promptName}-prompt`} className="text-sm font-bold text-[#33443a]">{title}</label>
-                        <button type="button" onClick={() => copyPrompt(promptName, prompt)} className="rounded-lg border border-[#cbd6c9] bg-white px-3 py-1.5 text-xs font-bold text-[#49623f] transition hover:border-[#91ad37]">{copiedPrompt === promptName ? 'Copied' : 'Copy'}</button>
-                      </div>
-                      <textarea id={`${promptName}-prompt`} readOnly value={prompt} className="min-h-36 w-full resize-y rounded-2xl border border-[#cbd6c9] bg-white p-4 text-sm leading-6 text-[#617067] outline-none focus:border-[#91ad37] focus:ring-4 focus:ring-[#e9f3c5]" />
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="mt-10 space-y-3">
-                <button type="button" onClick={() => { setShowSummary(false); setReviewAll(true) }} className="w-full rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Back to Quiz</button>
-                <button type="button" onClick={() => setShowRetryConfirmation(true)} className="w-full rounded-xl border border-[#cbd6c9] bg-white px-5 py-3.5 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Retry Quiz</button>
-              </div>
-            </div>
-          </section>
+          <ResultsView
+            fileName={fileName}
+            questions={questions}
+            answers={answers}
+            score={getScore()}
+            missedQuestions={missedQuestions}
+            explanationPrompt={explanationPrompt}
+            teachingPrompt={teachingPrompt}
+            copiedPrompt={copiedPrompt}
+            summaryAnimationKey={summaryAnimationKey}
+            showMissedQuestions={showMissedQuestions}
+            onToggleMissedQuestions={() => setShowMissedQuestions((isVisible) => !isVisible)}
+            onCopyPrompt={copyPrompt}
+            onBackToQuiz={() => { setShowSummary(false); setReviewAll(true) }}
+            onRetry={() => setShowRetryConfirmation(true)}
+          />
         ) : (
-          <section className="flex-1 py-10 sm:py-14">
-            <div className="mb-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-              <div>
-                <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#788c3d]">{fileName}</p>
-                <h1 className="text-4xl font-black tracking-[-0.04em] text-[#1d2925] sm:text-6xl">Let&apos;s get started.</h1>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-white px-4 py-3 text-right text-sm font-semibold text-[#617067] shadow-sm">
-                  {viewMode === 'single' && !reviewAll ? `Question ${currentQuestion + 1} of ${questions.length}` : `${Object.keys(answers).length} of ${questions.length} answered`}
-                </div>
-                {reviewAll && <button type="button" onClick={showSummaryPage} className="rounded-xl border border-[#cbd6c9] bg-white px-4 py-3 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Show Summary</button>}
-              </div>
-            </div>
-
-            {viewMode === 'single' && !reviewAll ? (
-              <div className="mx-auto max-w-3xl">
-                <QuizQuestion
-                  question={questions[currentQuestion]}
-                  questionIndex={currentQuestion}
-                  answers={answers}
-                  gradingMode={gradingMode}
-                  isSubmitted={isSubmitted}
-                  onSelectAnswer={selectAnswer}
-                  onDeselectAnswer={deselectAnswer}
-                />
-                <div className="mt-6 flex justify-between gap-4">
-                  <button type="button" disabled={currentQuestion === 0} onClick={() => setCurrentQuestion((index) => index - 1)} className="rounded-xl border border-[#cbd6c9] bg-white px-5 py-3 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37] disabled:cursor-not-allowed disabled:opacity-40">Previous</button>
-                  <button type="button" disabled={currentQuestion === questions.length - 1} onClick={() => setCurrentQuestion((index) => index + 1)} className="rounded-xl bg-[#263b31] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#17281f] disabled:cursor-not-allowed disabled:opacity-40">Next question</button>
-                </div>
-              </div>
-            ) : (
-              <div className="mx-auto max-w-3xl space-y-6">
-                {questions.map((question, index) => (
-                  <QuizQuestion
-                    key={index}
-                    question={question}
-                    questionIndex={index}
-                    answers={answers}
-                    gradingMode={gradingMode}
-                    isSubmitted={isSubmitted}
-                    onSelectAnswer={selectAnswer}
-                    onDeselectAnswer={deselectAnswer}
-                  />
-                ))}
-              </div>
-            )}
-
-            <div className="mx-auto mt-10 flex max-w-3xl flex-col items-center gap-4 border-t border-[#d9dfd7] pt-8">
-              {isSubmitted && <p className="text-lg font-bold text-[#49623f]">You scored {getScore()} out of {questions.length}.</p>}
-              <div className="relative" onMouseEnter={() => setShowSubmitHint(true)} onMouseLeave={() => setShowSubmitHint(false)}>
-                <button type="button" onClick={submitQuiz} disabled={isSubmitted || Object.keys(answers).length === 0} title={!isSubmitted && Object.keys(answers).length === 0 ? 'Answer at least one question to submit!' : undefined} aria-describedby={!isSubmitted && Object.keys(answers).length === 0 ? 'submit-hint' : undefined} className="rounded-xl bg-[#263b31] px-8 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] disabled:cursor-not-allowed disabled:opacity-40">{isSubmitted ? 'Quiz submitted' : 'Submit Quiz'}</button>
-                {!isSubmitted && Object.keys(answers).length === 0 && (
-                  <span id="submit-hint" role="tooltip" className={`pointer-events-none absolute bottom-full left-1/2 z-10 mb-3 w-max max-w-[calc(100vw-3rem)] -translate-x-1/2 rounded-xl bg-[#263b31] px-3 py-2 text-center text-xs font-semibold text-white shadow-lg transition-opacity ${showSubmitHint ? 'opacity-100' : 'opacity-0'}`}>Answer at least one question to submit!</span>
-                )}
-              </div>
-            </div>
-
-            {reviewAll && (
-              <div className="mx-auto mt-10 flex max-w-3xl flex-col items-center gap-3 border-t border-[#d9dfd7] pt-8">
-                <button type="button" onClick={showSummaryPage} className="rounded-xl border border-[#cbd6c9] bg-white px-5 py-3.5 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Show Summary</button>
-                <button type="button" onClick={() => setShowRetryConfirmation(true)} className="rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Retry Quiz</button>
-              </div>
-            )}
-          </section>
+          <QuizView
+            fileName={fileName}
+            questions={questions}
+            answers={answers}
+            currentQuestion={currentQuestion}
+            viewMode={viewMode}
+            gradingMode={gradingMode}
+            isSubmitted={isSubmitted}
+            reviewAll={reviewAll}
+            showSubmitHint={showSubmitHint}
+            onSelectAnswer={selectAnswer}
+            onDeselectAnswer={deselectAnswer}
+            onPrevious={() => setCurrentQuestion((index) => index - 1)}
+            onNext={() => setCurrentQuestion((index) => index + 1)}
+            onShowSummary={showSummaryPage}
+            onSubmit={submitQuiz}
+            onRetry={() => setShowRetryConfirmation(true)}
+            onSubmitHintEnter={() => setShowSubmitHint(true)}
+            onSubmitHintLeave={() => setShowSubmitHint(false)}
+            getScore={getScore}
+          />
         ) : (
-        <section className="grid flex-1 items-center gap-12 py-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
-          <div>
-            <p className="mb-5 text-sm font-bold uppercase tracking-[0.2em] text-[#788c3d]">Study smarter</p>
-            <h1 className="max-w-xl text-5xl font-black leading-[0.98] tracking-[-0.04em] text-[#1d2925] sm:text-7xl">Turn notes into momentum.</h1>
-            <p className="mt-7 max-w-md text-lg leading-8 text-[#617067]">Bring a Markdown quiz or start with a sample. We&apos;ll turn it into focused multiple-choice practice.</p>
-          </div>
-
-          <div className="space-y-5">
-            <div
-              onDragOver={(event) => { event.preventDefault(); setIsDragging(true) }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={handleDrop}
-              className={`rounded-3xl border-2 border-dashed bg-white p-8 shadow-[0_18px_45px_rgba(54,75,61,0.08)] transition sm:p-10 ${isDragging ? 'border-[#91ad37] bg-[#f7fbe9]' : 'border-[#cbd6c9]'}`}
-            >
-              {fileName ? (
-                <>
-                  <div className="mb-7 flex size-16 items-center justify-center rounded-2xl border border-[#cbd6c9] bg-[#f4f9df] text-xs font-black uppercase tracking-wider text-[#49623f]" aria-hidden="true">MD</div>
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Quiz uploaded</p>
-                  <h2 className="mt-2 break-words text-2xl font-bold tracking-tight text-[#26332d]">{fileName}</h2>
-                  <p className="mt-2 text-sm leading-6 text-[#738077]">{questions.length} questions ready to configure.</p>
-                  <label className="mt-7 inline-flex cursor-pointer items-center rounded-xl border border-[#cbd6c9] bg-white px-5 py-3 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37] focus-within:ring-4 focus-within:ring-[#d6ed63]">
-                    Choose another .md file
-                    <input type="file" accept=".md,text/markdown" className="sr-only" onChange={(event) => handleFile(event.target.files[0])} />
-                  </label>
-                </>
-              ) : (
-                <>
-                  <div className="mb-8 flex size-12 items-center justify-center rounded-2xl bg-[#e9f3c5] text-2xl" aria-hidden="true">↑</div>
-                  <h2 className="text-2xl font-bold tracking-tight text-[#26332d]">Drop your quiz here</h2>
-                  <p className="mt-2 text-sm leading-6 text-[#738077]">Upload a Markdown file and we&apos;ll parse each question automatically.</p>
-                  <label className="mt-7 inline-flex cursor-pointer items-center rounded-xl bg-[#263b31] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#17281f] focus-within:ring-4 focus-within:ring-[#d6ed63]">
-                    Choose .md file
-                    <input type="file" accept=".md,text/markdown" className="sr-only" onChange={(event) => handleFile(event.target.files[0])} />
-                  </label>
-                  <p className="mt-4 text-xs text-[#99a59c]">Maximum flexibility, zero formatting fuss.</p>
-                </>
-              )}
-            </div>
-
-            <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-[0.16em] text-[#97a39a]"><span className="h-px flex-1 bg-[#d9dfd7]" />or use a sample<span className="h-px flex-1 bg-[#d9dfd7]" /></div>
-            <select
-              value={selectedSample}
-              onChange={(event) => {
-                const sample = sampleQuizzes.find(({ fileName: name }) => name === event.target.value)
-                setSelectedSample(event.target.value)
-                if (sample) saveQuiz(sample.content, sample.fileName)
-              }}
-              className="w-full appearance-none rounded-xl border border-[#cbd6c9] bg-white px-4 py-3.5 text-sm font-semibold text-[#33443a] outline-none transition focus:border-[#91ad37] focus:ring-4 focus:ring-[#e9f3c5]"
-            >
-              <option value="">Select a sample quiz...</option>
-              {sampleQuizzes.map(({ fileName: name, name: label }) => <option key={name} value={name}>{label}</option>)}
-            </select>
-          </div>
-        </section>
+          <HomeView
+            fileName={fileName}
+            questions={questions}
+            selectedSample={selectedSample}
+            isDragging={isDragging}
+            onDragOver={(event) => { event.preventDefault(); setIsDragging(true) }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+            onFileSelect={handleFile}
+            onSampleSelect={(fileNameValue) => {
+              const sample = sampleQuizzes.find(({ fileName: name }) => name === fileNameValue)
+              setSelectedSample(fileNameValue)
+              if (sample) saveQuiz(sample.content, sample.fileName)
+            }}
+          />
         )}
 
         {!showGuide && !quizStarted && isConfigOpen && (
-          <section className="mx-auto mb-8 w-full max-w-3xl rounded-3xl border border-[#d9dfd7] bg-white p-7 shadow-[0_18px_45px_rgba(54,75,61,0.08)] sm:p-9" aria-labelledby="quiz-settings-title">
-            <div className="mb-8">
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Quiz ready</p>
-              <h2 id="quiz-settings-title" className="text-3xl font-black tracking-tight text-[#26332d]">Set your study mode</h2>
-              <p className="mt-2 text-sm leading-6 text-[#738077]">Choose how you want to move through {questions.length} questions.</p>
-            </div>
-
-            <div className="space-y-6">
-              <fieldset>
-                <legend className="mb-3 text-sm font-bold text-[#33443a]">View mode</legend>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {[['single', 'One question at a time'], ['all', 'All on one page']].map(([value, label]) => (
-                    <label key={value} className={`cursor-pointer rounded-2xl border p-4 transition ${viewMode === value ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7] hover:border-[#b8c6b6]'}`}>
-                      <input type="radio" name="view-mode" value={value} checked={viewMode === value} onChange={(event) => setViewMode(event.target.value)} className="sr-only" />
-                      <span className="block text-sm font-bold text-[#33443a]">{label}</span>
-                      <span className="mt-1 block text-xs leading-5 text-[#819087]">{value === 'single' ? 'Stay focused on one prompt.' : 'Scan the full quiz at once.'}</span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-
-              <fieldset>
-                <legend className="mb-3 text-sm font-bold text-[#33443a]">Grading mode</legend>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {[['instant', 'Instant feedback'], ['end', 'Grade at the end']].map(([value, label]) => (
-                    <label key={value} className={`cursor-pointer rounded-2xl border p-4 transition ${gradingMode === value ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7] hover:border-[#b8c6b6]'}`}>
-                      <input type="radio" name="grading-mode" value={value} checked={gradingMode === value} onChange={(event) => setGradingMode(event.target.value)} className="sr-only" />
-                      <span className="block text-sm font-bold text-[#33443a]">{label}</span>
-                      <span className="mt-1 block text-xs leading-5 text-[#819087]">{value === 'instant' ? 'Learn as you go.' : 'See your result after the last question.'}</span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-            </div>
-
-            <button type="button" onClick={startQuiz} className="mt-8 w-full rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Start Quiz</button>
-          </section>
+          <QuizSetupView
+            questionsCount={questions.length}
+            viewMode={viewMode}
+            gradingMode={gradingMode}
+            onViewModeChange={setViewMode}
+            onGradingModeChange={setGradingMode}
+            onStart={startQuiz}
+          />
         )}
 
         {!showGuide && !quizStarted && (fileName || error) && (
@@ -532,88 +367,21 @@ function App() {
         />
       )}
 
-      <>
-        <button type="button" onClick={() => setIsSettingsOpen(false)} className={`fixed inset-0 z-30 cursor-default bg-[#1d2925]/30 backdrop-blur-sm transition-opacity duration-300 ${isSettingsOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`} aria-label="Close quiz settings" tabIndex={isSettingsOpen ? 0 : -1} />
-        <aside className={`fixed right-0 top-0 z-40 flex h-full w-full max-w-sm flex-col overflow-y-auto border-l border-[#d9dfd7] bg-white p-5 shadow-2xl transition-transform duration-300 ease-out sm:p-6 ${isSettingsOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full'}`} aria-labelledby="settings-title" aria-hidden={!isSettingsOpen}>
-          <div className="flex items-start justify-between gap-4 border-b border-[#d9dfd7] pb-5">
-              <div>
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Workspace</p>
-                <h2 id="settings-title" className="text-2xl font-black tracking-tight text-[#26332d]">Quiz settings</h2>
-              </div>
-              <button type="button" onClick={() => setIsSettingsOpen(false)} className="flex size-9 items-center justify-center rounded-full border border-[#cbd6c9] bg-white text-lg text-[#49623f] transition hover:border-[#91ad37]" aria-label="Close quiz settings" title="Close quiz settings">×</button>
-            </div>
-
-            <div className="space-y-6 py-6">
-              <div>
-                <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Quiz mode</p>
-              <fieldset>
-                <legend className="mb-3 text-sm font-bold text-[#33443a]">View mode</legend>
-                <div className="space-y-3">
-                  {[['single', 'One question at a time'], ['all', 'All on one page']].map(([value, label]) => (
-                    <label key={value} className={`block cursor-pointer rounded-xl border p-3 transition ${viewMode === value ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7] hover:border-[#b8c6b6]'}`}>
-                      <input type="radio" name="sidebar-view-mode" value={value} checked={viewMode === value} onChange={(event) => setViewMode(event.target.value)} className="sr-only" />
-                      <span className="block text-sm font-bold text-[#33443a]">{label}</span>
-                      <span className="mt-1 block text-xs leading-5 text-[#819087]">{value === 'single' ? 'Stay focused on one prompt.' : 'Scan the full quiz at once.'}</span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-
-              <fieldset>
-                <legend className="mb-3 text-sm font-bold text-[#33443a]">Grading mode</legend>
-                <div className="space-y-3">
-                  {[['instant', 'Instant feedback'], ['end', 'Grade at the end']].map(([value, label]) => (
-                    <div key={value} className="group relative">
-                      <label className={`block rounded-xl border p-3 transition ${canChangeGradingMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'} ${gradingMode === value ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7]'}`}>
-                        <input type="radio" name="sidebar-grading-mode" value={value} checked={gradingMode === value} onChange={(event) => setGradingMode(event.target.value)} disabled={!canChangeGradingMode} className="sr-only" />
-                        <span className="block text-sm font-bold text-[#33443a]">{label}</span>
-                        <span className="mt-1 block text-xs leading-5 text-[#819087]">{value === 'instant' ? 'Learn as you go.' : 'See your result after the last question.'}</span>
-                      </label>
-                      {!canChangeGradingMode && (
-                        <span role="tooltip" className="pointer-events-none absolute bottom-full left-4 z-10 mb-2 w-max max-w-[calc(100% - 2rem)] rounded-xl bg-[#263b31] px-3 py-2 text-xs font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">Grading mode cannot be changed during a quiz.</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </fieldset>
-              </div>
-
-              <div className="border-t border-[#d9dfd7] pt-6">
-                <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Appearance</p>
-                <div className="space-y-5">
-                  <fieldset>
-                    <legend className="mb-3 text-sm font-bold text-[#33443a]">Color theme</legend>
-                    <div className="grid grid-cols-2 gap-2">
-                      {themeOptions.map(([value, label]) => (
-                        <label key={value} className={`cursor-pointer rounded-xl border p-3 transition ${theme === value ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7] hover:border-[#b8c6b6]'}`}>
-                          <input type="radio" name="color-theme" value={value} checked={theme === value} onChange={(event) => setTheme(event.target.value)} className="sr-only" />
-                          <span className="block text-xs font-bold text-[#33443a]">{label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </fieldset>
-
-                  <fieldset>
-                    <legend className="mb-3 text-sm font-bold text-[#33443a]">Font</legend>
-                    <div className="space-y-2">
-                      {fontOptions.map(([value, label]) => (
-                        <label key={value} className={`block cursor-pointer rounded-xl border p-3 transition ${font === value ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7] hover:border-[#b8c6b6]'}`}>
-                          <input type="radio" name="font" value={value} checked={font === value} onChange={(event) => setFont(event.target.value)} className="sr-only" />
-                          <span className="block text-xs font-bold text-[#33443a]">{label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </fieldset>
-
-                  <button type="button" onClick={() => setIsDarkMode((isEnabled) => !isEnabled)} className="theme-toggle flex w-full items-center justify-between rounded-xl border border-[#cbd6c9] bg-white px-3 py-2.5 text-sm font-bold text-[#49623f] transition hover:border-[#91ad37]" aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}>
-                    <span>Dark mode</span>
-                    <span>{isDarkMode ? 'On' : 'Off'}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-        </aside>
-      </>
+      <SettingsDrawer
+        isOpen={isSettingsOpen}
+        viewMode={viewMode}
+        gradingMode={gradingMode}
+        theme={theme}
+        font={font}
+        isDarkMode={isDarkMode}
+        canChangeGradingMode={canChangeGradingMode}
+        onClose={() => setIsSettingsOpen(false)}
+        onViewModeChange={setViewMode}
+        onGradingModeChange={setGradingMode}
+        onThemeChange={setTheme}
+        onFontChange={setFont}
+        onDarkModeToggle={() => setIsDarkMode((isEnabled) => !isEnabled)}
+      />
     </main>
   )
 }
