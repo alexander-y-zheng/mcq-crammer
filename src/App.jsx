@@ -156,8 +156,8 @@ function App() {
   const canChangeGradingMode = !quizStarted || isSubmitted
 
   return (
-    <main className={`theme-${theme} app-font-${font} min-h-screen overflow-hidden bg-[#f6f7f2] text-[#1d2925] ${isDarkMode ? 'dark-mode' : ''}`}>
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-8 sm:px-10 lg:px-16">
+    <main className={`theme-${theme} app-font-${font} flex min-h-screen flex-col overflow-hidden bg-[#f6f7f2] text-[#1d2925] ${isDarkMode ? 'dark-mode' : ''}`}>
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-6 py-8 sm:px-10 lg:px-16">
         <AppHeader
           showGuide={showGuide}
           onHomeClick={handleHomeClick}
@@ -246,6 +246,10 @@ function App() {
           </section>
         )}
       </div>
+
+      <footer className="border-t border-[#d9dfd7] px-6 py-5 text-center text-xs text-[#819087] sm:px-10 lg:px-16">
+        <p>Made by Alex Zheng, 2026. Have feedback? <a href="https://neu.co1.qualtrics.com/jfe/form/SV_9ELn11adEWyNouG" target="_blank" rel="noreferrer" className="font-bold text-[#49623f] underline decoration-[#cbd6c9] underline-offset-2 transition hover:text-[#788c3d]">Let me know here!</a></p>
+      </footer>
 
       {showSubmitConfirmation && (
         <ConfirmationDialog
