@@ -1,93 +1,13 @@
 import { useEffect, useState } from 'react'
-import ReactMarkdown from 'react-markdown'
-import rehypeKatex from 'rehype-katex'
-import remarkMath from 'remark-math'
 import { parseMarkdown } from './quizParser'
+import QuizQuestion from './components/QuizQuestion'
+import ConfirmationDialog from './components/ConfirmationDialog'
+import AppHeader from './components/AppHeader'
+import GuideView from './views/GuideView'
+import sampleQuizzes from './data/sampleQuizzes'
+import { quizGenerationPrompt, quizTemplate } from './data/quizPrompts'
+import { themeOptions, fontOptions } from './data/settingsOptions'
 import 'katex/dist/katex.min.css'
-import astrologyQuiz from './quiz_examples/quiz_astrology.md?raw'
-import astronomyQuiz from './quiz_examples/quiz_astronomy.md?raw'
-import biologyQuiz from './quiz_examples/quiz_biology_basics.md?raw'
-import chemistryQuiz from './quiz_examples/quiz_chemistry.md?raw'
-import financeQuiz from './quiz_examples/quiz_finance_tvm.md?raw'
-import pythonQuiz from './quiz_examples/quiz_python_basics.md?raw'
-import worldHistoryQuiz from './quiz_examples/quiz_world_history.md?raw'
-
-const sampleQuizzes = [
-  { name: 'Astrology', fileName: 'quiz_astrology.md', content: astrologyQuiz },
-  { name: 'Astronomy', fileName: 'quiz_astronomy.md', content: astronomyQuiz },
-  { name: 'Python basics', fileName: 'quiz_python_basics.md', content: pythonQuiz },
-  { name: 'Biology basics', fileName: 'quiz_biology_basics.md', content: biologyQuiz },
-  { name: 'Chemistry', fileName: 'quiz_chemistry.md', content: chemistryQuiz },
-  { name: 'Finance: time value of money', fileName: 'quiz_finance_tvm.md', content: financeQuiz },
-  { name: 'World history', fileName: 'quiz_world_history.md', content: worldHistoryQuiz },
-]
-
-const themeOptions = [
-  ['green', 'Fresh green'],
-  ['sepia', 'Warm sepia'],
-  ['blue', 'Soft blue'],
-  ['purple', 'Intense purple'],
-]
-
-const fontOptions = [
-  ['default', 'Modern sans'],
-  ['serif', 'Classic serif'],
-  ['handwriting', 'Handwriting'],
-]
-
-const quizGenerationPrompt = `Create a multiple-choice quiz in Markdown using exactly this format:
-
-### [Question]
-- [ ] [Incorrect answer]
-- [x] [Correct answer]
-- [ ] [Incorrect answer]
-- [ ] [Incorrect answer]
-> Explanation: [A concise explanation of why the correct answer is right]
-
-Requirements:
-- Create 10 questions about [INSERT TOPIC].
-- Give each question exactly 4 answer options.
-- Mark exactly one correct option with [x] and all others with [ ].
-- Put the correct answer in a different position each time.
-- Keep explanations clear and educational.
-- Return only the Markdown quiz, with no introduction or closing text.`
-
-const quizTemplate = `# My Quiz
-
-### 1. Write your question here?
-- [ ] Incorrect answer
-- [x] Correct answer
-- [ ] Incorrect answer
-- [ ] Incorrect answer
-> Explanation: Explain why the correct answer is right.
-
-### 2. Write another question here?
-- [ ] Incorrect answer
-- [ ] Incorrect answer
-- [x] Correct answer
-- [ ] Incorrect answer
-> Explanation: Explain why the correct answer is right.
-`
-
-function MarkdownContent({ children, className = '' }) {
-  return (
-    <div className={className}>
-      <ReactMarkdown
-        remarkPlugins={[remarkMath]}
-        rehypePlugins={[rehypeKatex]}
-        components={{
-          p: ({ children: content }) => <p className="m-0">{content}</p>,
-          pre: ({ children: content }) => <pre className="my-3 overflow-x-auto rounded-xl bg-[#263b31] p-4 text-sm text-[#e8eee8]">{content}</pre>,
-          code: ({ children: content, className: codeClassName }) => codeClassName
-            ? <code className={codeClassName}>{content}</code>
-            : <code className="rounded bg-[#eef3e8] px-1.5 py-0.5 font-mono text-[0.9em] text-[#49623f]">{content}</code>,
-        }}
-      >
-        {children}
-      </ReactMarkdown>
-    </div>
-  )
-}
 
 function App() {
   const [questions, setQuestions] = useState([])
@@ -316,102 +236,23 @@ function App() {
 
   const canChangeGradingMode = !quizStarted || isSubmitted
 
-  const renderQuestion = (question, questionIndex) => {
-    const selectedIndex = answers[questionIndex]
-    const hasAnswered = selectedIndex !== undefined
-    const showFeedback = gradingMode === 'instant' && hasAnswered
-    const showResults = gradingMode === 'end' && isSubmitted
-
-    return (
-      <article id={`question-${questionIndex}`} key={questionIndex} className="rounded-3xl border border-[#d9dfd7] bg-white p-6 shadow-[0_12px_30px_rgba(54,75,61,0.06)] sm:p-8">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Question {questionIndex + 1}</span>
-          {hasAnswered && (
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-semibold text-[#819087]">Answer selected</span>
-              {gradingMode === 'end' && !isSubmitted && (
-                <button type="button" onClick={() => deselectAnswer(questionIndex)} className="text-xs font-bold text-[#819087] underline decoration-[#cbd6c9] underline-offset-2 transition hover:text-[#49623f]">Deselect answer</button>
-              )}
-            </div>
-          )}
-        </div>
-        <div className="text-xl font-bold leading-8 tracking-tight text-[#26332d] sm:text-2xl"><MarkdownContent>{question.question}</MarkdownContent></div>
-        <div className="mt-7 space-y-3">
-          {question.options.map((option, optionIndex) => {
-            const isSelected = selectedIndex === optionIndex
-            const isCorrect = option.isCorrect
-            let optionStyle = 'border-[#d9dfd7] hover:border-[#b8c6b6] hover:bg-[#fafcf7]'
-            if (showFeedback && isSelected) optionStyle = isCorrect ? 'border-[#72a666] bg-[#eaf6e7] text-[#38643a]' : 'border-[#d27869] bg-[#fff0ed] text-[#98493e]'
-            if (showFeedback && !isSelected && isCorrect) optionStyle = 'border-[#72a666] bg-[#eaf6e7] text-[#38643a]'
-            if (gradingMode === 'end' && isSelected && !isSubmitted) optionStyle = 'border-[#b3bcc5] bg-[#f3f5f7] text-[#465562] ring-2 ring-[#dfe5eb]'
-            if (showResults && isSelected) optionStyle = isCorrect ? 'border-[#72a666] bg-[#eaf6e7] text-[#38643a]' : 'border-[#d27869] bg-[#fff0ed] text-[#98493e]'
-
-            return (
-              <button key={optionIndex} type="button" disabled={showFeedback || isSubmitted} onClick={() => selectAnswer(questionIndex, optionIndex)} className={`flex w-full items-start gap-4 rounded-2xl border px-4 py-4 text-left text-sm font-semibold transition disabled:cursor-default ${optionStyle}`}>
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-current text-xs">{String.fromCharCode(65 + optionIndex)}</span>
-                <span className="pt-0.5 leading-6"><MarkdownContent>{option.text}</MarkdownContent></span>
-              </button>
-            )
-          })}
-        </div>
-        {(showFeedback || showResults) && question.explanation && (
-          <div className="mt-6 rounded-2xl bg-[#f4f7ef] px-4 py-4 text-sm leading-6 text-[#5e7063]"><span className="font-bold text-[#334c3a]">Explanation: </span><MarkdownContent>{question.explanation}</MarkdownContent></div>
-        )}
-      </article>
-    )
-  }
-
   return (
     <main className={`theme-${theme} app-font-${font} min-h-screen overflow-hidden bg-[#f6f7f2] text-[#1d2925] ${isDarkMode ? 'dark-mode' : ''}`}>
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-8 sm:px-10 lg:px-16">
-        <header className="flex items-center justify-between border-b border-[#d9dfd7] pb-6">
-          <button type="button" onClick={handleHomeClick} className="flex items-center gap-3 font-bold tracking-tight">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-[#d6ed63] text-lg text-[#26331f]">?</span>
-            <span>MCQ Crammer</span>
-          </button>
-          <div className="flex items-center gap-5">
-            <button type="button" onClick={() => setShowGuide((isVisible) => !isVisible)} className="text-xs font-bold uppercase tracking-[0.14em] text-[#6c7b70] transition hover:text-[#334c3a]">
-              {showGuide ? 'Back to workspace' : 'How to use AI'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsSettingsOpen(true)}
-              className="flex size-10 items-center justify-center rounded-full border border-[#cbd6c9] bg-white text-lg text-[#49623f] transition hover:border-[#91ad37]"
-              aria-label="Open quiz settings"
-              title="Open quiz settings"
-            >
-              <span aria-hidden="true">⚙</span>
-            </button>
-          </div>
-        </header>
+        <AppHeader
+          showGuide={showGuide}
+          onHomeClick={handleHomeClick}
+          onGuideToggle={() => setShowGuide((isVisible) => !isVisible)}
+          onSettingsOpen={() => setIsSettingsOpen(true)}
+        />
 
         {showGuide ? (
-          <section className="flex-1 py-10 sm:py-14">
-            <div className="mx-auto max-w-3xl">
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#788c3d]">Build a quiz in seconds</p>
-              <h1 className="max-w-2xl text-4xl font-black leading-[1.02] tracking-[-0.04em] text-[#1d2925] sm:text-6xl">How to use AI to generate quizzes.</h1>
-              <p className="mt-5 max-w-2xl text-lg leading-8 text-[#617067]">Ask ChatGPT or Claude for a quiz in the format MCQ Crammer understands, then upload the Markdown file here.</p>
-
-              <div className="mt-10 rounded-3xl border border-[#d9dfd7] bg-white p-6 shadow-[0_12px_30px_rgba(54,75,61,0.06)] sm:p-8">
-                <div className="mb-4 flex items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-xl font-bold tracking-tight text-[#26332d]">Copy this prompt</h2>
-                    <p className="mt-1 text-sm text-[#738077]">Replace the topic placeholder before sending.</p>
-                  </div>
-                  <button type="button" onClick={() => copyPrompt('guide', quizGenerationPrompt)} className="shrink-0 rounded-lg border border-[#cbd6c9] bg-white px-3 py-2 text-xs font-bold text-[#49623f] transition hover:border-[#91ad37]">{copiedPrompt === 'guide' ? 'Copied' : 'Copy'}</button>
-                </div>
-                <textarea readOnly value={quizGenerationPrompt} className="min-h-80 w-full resize-y rounded-2xl border border-[#cbd6c9] bg-[#f8faf5] p-4 font-mono text-sm leading-6 text-[#4d6253] outline-none focus:border-[#91ad37] focus:ring-4 focus:ring-[#e9f3c5]" aria-label="AI quiz generation prompt" />
-              </div>
-
-              <div className="mt-6 flex flex-col items-start justify-between gap-5 rounded-3xl bg-[#263b31] p-6 text-white sm:flex-row sm:items-center sm:p-8">
-                <div>
-                  <h2 className="text-xl font-bold">Start from a template</h2>
-                  <p className="mt-1 max-w-lg text-sm leading-6 text-[#c5d3c5]">Download a ready-to-edit Markdown file, then fill in your own questions and answers.</p>
-                </div>
-                <button type="button" onClick={downloadTemplate} className="shrink-0 rounded-xl bg-[#d6ed63] px-5 py-3 text-sm font-bold text-[#26331f] transition hover:bg-[#e5f69a]">Download quiz-template.md</button>
-              </div>
-            </div>
-          </section>
+          <GuideView
+            generationPrompt={quizGenerationPrompt}
+            copiedPrompt={copiedPrompt}
+            onCopyPrompt={copyPrompt}
+            onDownloadTemplate={downloadTemplate}
+          />
         ) : quizStarted ? showSummary ? (
           <section className="flex-1 py-10 sm:py-14">
             <div className="mx-auto max-w-3xl">
@@ -503,7 +344,15 @@ function App() {
 
             {viewMode === 'single' && !reviewAll ? (
               <div className="mx-auto max-w-3xl">
-                {renderQuestion(questions[currentQuestion], currentQuestion)}
+                <QuizQuestion
+                  question={questions[currentQuestion]}
+                  questionIndex={currentQuestion}
+                  answers={answers}
+                  gradingMode={gradingMode}
+                  isSubmitted={isSubmitted}
+                  onSelectAnswer={selectAnswer}
+                  onDeselectAnswer={deselectAnswer}
+                />
                 <div className="mt-6 flex justify-between gap-4">
                   <button type="button" disabled={currentQuestion === 0} onClick={() => setCurrentQuestion((index) => index - 1)} className="rounded-xl border border-[#cbd6c9] bg-white px-5 py-3 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37] disabled:cursor-not-allowed disabled:opacity-40">Previous</button>
                   <button type="button" disabled={currentQuestion === questions.length - 1} onClick={() => setCurrentQuestion((index) => index + 1)} className="rounded-xl bg-[#263b31] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#17281f] disabled:cursor-not-allowed disabled:opacity-40">Next question</button>
@@ -511,7 +360,18 @@ function App() {
               </div>
             ) : (
               <div className="mx-auto max-w-3xl space-y-6">
-                {questions.map((question, index) => renderQuestion(question, index))}
+                {questions.map((question, index) => (
+                  <QuizQuestion
+                    key={index}
+                    question={question}
+                    questionIndex={index}
+                    answers={answers}
+                    gradingMode={gradingMode}
+                    isSubmitted={isSubmitted}
+                    onSelectAnswer={selectAnswer}
+                    onDeselectAnswer={deselectAnswer}
+                  />
+                ))}
               </div>
             )}
 
@@ -636,50 +496,40 @@ function App() {
         )}
       </div>
 
-      <footer className="border-t border-[#d9dfd7] px-6 py-5 text-center text-xs text-[#819087] sm:px-10 lg:px-16">
-        <p>Made by Alex Zheng, 2026. Have feedback? <a href="https://neu.co1.qualtrics.com/jfe/form/SV_9ELn11adEWyNouG" target="_blank" rel="noreferrer" className="font-bold text-[#49623f] underline decoration-[#cbd6c9] underline-offset-2 transition hover:text-[#788c3d]">Let me know here!</a></p>
-      </footer>
-
       {showSubmitConfirmation && (
-        <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#1d2925]/45 px-5 py-8 backdrop-blur-sm" role="presentation">
-          <section className="w-full max-w-lg rounded-3xl bg-white p-7 shadow-2xl sm:p-9" role="dialog" aria-modal="true" aria-labelledby="submit-confirmation-title">
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Ready to submit?</p>
-            <h2 id="submit-confirmation-title" className="text-3xl font-black tracking-tight text-[#26332d]">Some questions are unanswered.</h2>
-            <p className="mt-3 text-sm leading-6 text-[#738077]">You have {unansweredCount} unanswered {unansweredCount === 1 ? 'question' : 'questions'}. Are you sure you want to submit without answering them?</p>
-            <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => setShowSubmitConfirmation(false)} className="rounded-xl border border-[#cbd6c9] bg-white px-5 py-3.5 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Cancel</button>
-              <button type="button" onClick={confirmSubmitQuiz} className="rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Submit Quiz</button>
-            </div>
-          </section>
-        </div>
+        <ConfirmationDialog
+          eyebrow="Ready to submit?"
+          title="Some questions are unanswered."
+          description={`You have ${unansweredCount} unanswered ${unansweredCount === 1 ? 'question' : 'questions'}. Are you sure you want to submit without answering them?`}
+          confirmLabel="Submit Quiz"
+          titleId="submit-confirmation-title"
+          onCancel={() => setShowSubmitConfirmation(false)}
+          onConfirm={confirmSubmitQuiz}
+        />
       )}
 
       {showResetConfirmation && (
-        <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#1d2925]/45 px-5 py-8 backdrop-blur-sm" role="presentation">
-          <section className="w-full max-w-lg rounded-3xl bg-white p-7 shadow-2xl sm:p-9" role="dialog" aria-modal="true" aria-labelledby="reset-confirmation-title">
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Leave quiz?</p>
-            <h2 id="reset-confirmation-title" className="text-3xl font-black tracking-tight text-[#26332d]">Return to the home page?</h2>
-            <p className="mt-3 text-sm leading-6 text-[#738077]">You will lose your progress and will have to reupload a file to start another quiz.</p>
-            <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => setShowResetConfirmation(false)} className="rounded-xl border border-[#cbd6c9] bg-white px-5 py-3.5 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Cancel</button>
-              <button type="button" onClick={returnHome} className="rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Return Home</button>
-            </div>
-          </section>
-        </div>
+        <ConfirmationDialog
+          eyebrow="Leave quiz?"
+          title="Return to the home page?"
+          description="You will lose your progress and will have to reupload a file to start another quiz."
+          confirmLabel="Return Home"
+          titleId="reset-confirmation-title"
+          onCancel={() => setShowResetConfirmation(false)}
+          onConfirm={returnHome}
+        />
       )}
 
       {showRetryConfirmation && (
-        <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#1d2925]/45 px-5 py-8 backdrop-blur-sm" role="presentation">
-          <section className="w-full max-w-lg rounded-3xl bg-white p-7 shadow-2xl sm:p-9" role="dialog" aria-modal="true" aria-labelledby="retry-confirmation-title">
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Start over?</p>
-            <h2 id="retry-confirmation-title" className="text-3xl font-black tracking-tight text-[#26332d]">Retry this quiz?</h2>
-            <p className="mt-3 text-sm leading-6 text-[#738077]">This will completely reset the quiz and wipe all results. Your current answers and score will be lost.</p>
-            <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => setShowRetryConfirmation(false)} className="rounded-xl border border-[#cbd6c9] bg-white px-5 py-3.5 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Cancel</button>
-              <button type="button" onClick={confirmRetryQuiz} className="rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Retry Quiz</button>
-            </div>
-          </section>
-        </div>
+        <ConfirmationDialog
+          eyebrow="Start over?"
+          title="Retry this quiz?"
+          description="This will completely reset the quiz and wipe all results. Your current answers and score will be lost."
+          confirmLabel="Retry Quiz"
+          titleId="retry-confirmation-title"
+          onCancel={() => setShowRetryConfirmation(false)}
+          onConfirm={confirmRetryQuiz}
+        />
       )}
 
       <>
