@@ -46,6 +46,7 @@ function App() {
   const [viewMode, setViewMode] = useState('single')
   const [gradingMode, setGradingMode] = useState('instant')
   const [randomizeAnswers, setRandomizeAnswers] = useState(false)
+  const [showProgressBar, setShowProgressBar] = useState(false)
   const [showResetConfirmation, setShowResetConfirmation] = useState(false)
   const [copiedPrompt, setCopiedPrompt] = useState('')
   const [showGuide, setShowGuide] = useState(false)
@@ -195,6 +196,7 @@ function App() {
 
   const canChangeGradingMode = !quizStarted || isSubmitted
   const canChangeRandomizeAnswers = !quizStarted || isSubmitted
+  const canChangeProgressBar = true
 
   return (
     <main className={`theme-${theme} app-font-${font} flex min-h-screen flex-col overflow-hidden bg-[#f6f7f2] text-[#1d2925] ${isDarkMode ? 'dark-mode' : ''}`}>
@@ -238,6 +240,7 @@ function App() {
             currentQuestion={currentQuestion}
             viewMode={viewMode}
             gradingMode={gradingMode}
+            showProgressBar={showProgressBar}
             isSubmitted={isSubmitted}
             reviewAll={reviewAll}
             showSubmitHint={showSubmitHint}
@@ -276,9 +279,11 @@ function App() {
             viewMode={viewMode}
             gradingMode={gradingMode}
             randomizeAnswers={randomizeAnswers}
+            showProgressBar={showProgressBar}
             onViewModeChange={setViewMode}
             onGradingModeChange={setGradingMode}
             onRandomizeAnswersChange={setRandomizeAnswers}
+            onProgressBarChange={setShowProgressBar}
             onStart={startQuiz}
           />
         )}
@@ -351,10 +356,13 @@ function App() {
         canChangeGradingMode={canChangeGradingMode}
         randomizeAnswers={randomizeAnswers}
         canChangeRandomizeAnswers={canChangeRandomizeAnswers}
+        showProgressBar={showProgressBar}
+        canChangeProgressBar={canChangeProgressBar}
         onClose={() => setIsSettingsOpen(false)}
         onViewModeChange={setViewMode}
         onGradingModeChange={setGradingMode}
         onRandomizeAnswersChange={setRandomizeAnswers}
+        onProgressBarChange={setShowProgressBar}
         onThemeChange={setTheme}
         onFontChange={setFont}
         onDarkModeToggle={() => setIsDarkMode((isEnabled) => !isEnabled)}

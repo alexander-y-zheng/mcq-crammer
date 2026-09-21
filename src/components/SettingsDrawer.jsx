@@ -5,15 +5,18 @@ function SettingsDrawer({
   viewMode,
   gradingMode,
   randomizeAnswers,
+  showProgressBar,
   theme,
   font,
   isDarkMode,
   canChangeGradingMode,
   canChangeRandomizeAnswers,
+  canChangeProgressBar,
   onClose,
   onViewModeChange,
   onGradingModeChange,
   onRandomizeAnswersChange,
+  onProgressBarChange,
   onThemeChange,
   onFontChange,
   onDarkModeToggle,
@@ -74,6 +77,19 @@ function SettingsDrawer({
               </label>
               {!canChangeRandomizeAnswers && (
                 <span role="tooltip" className="pointer-events-none absolute bottom-full left-4 z-10 mb-2 w-max max-w-[calc(100% - 2rem)] rounded-xl bg-[#263b31] px-3 py-2 text-xs font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">Answer order cannot be changed during a quiz.</span>
+              )}
+            </div>
+
+            <div className="group relative mt-5">
+              <label className={`flex items-center justify-between gap-4 rounded-xl border p-3 transition ${canChangeProgressBar ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'} ${showProgressBar ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7]'}`}>
+                <span>
+                  <span className="block text-sm font-bold text-[#33443a]">Show progress bar</span>
+                  <span className="mt-1 block text-xs leading-5 text-[#819087]">Keep track of answered questions.</span>
+                </span>
+                <input type="checkbox" checked={showProgressBar} onChange={(event) => onProgressBarChange(event.target.checked)} disabled={!canChangeProgressBar} className="size-5 accent-[#788c3d]" />
+              </label>
+              {!canChangeProgressBar && (
+                <span role="tooltip" className="pointer-events-none absolute bottom-full left-4 z-10 mb-2 w-max max-w-[calc(100% - 2rem)] rounded-xl bg-[#263b31] px-3 py-2 text-xs font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">Progress bar cannot be changed during a quiz.</span>
               )}
             </div>
           </div>

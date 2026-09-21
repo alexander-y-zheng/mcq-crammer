@@ -1,4 +1,4 @@
-function QuizSetupView({ questionsCount, viewMode, gradingMode, randomizeAnswers, onViewModeChange, onGradingModeChange, onRandomizeAnswersChange, onStart }) {
+function QuizSetupView({ questionsCount, viewMode, gradingMode, randomizeAnswers, showProgressBar, onViewModeChange, onGradingModeChange, onRandomizeAnswersChange, onProgressBarChange, onStart }) {
   return (
     <section className="mx-auto mb-8 w-full max-w-3xl rounded-3xl border border-[#d9dfd7] bg-white p-7 shadow-[0_18px_45px_rgba(54,75,61,0.08)] sm:p-9" aria-labelledby="quiz-settings-title">
       <div className="mb-8">
@@ -40,6 +40,14 @@ function QuizSetupView({ questionsCount, viewMode, gradingMode, randomizeAnswers
             <span className="mt-1 block text-xs leading-5 text-[#819087]">Mix the answer choices for each question.</span>
           </span>
           <input type="checkbox" checked={randomizeAnswers} onChange={(event) => onRandomizeAnswersChange(event.target.checked)} className="size-5 accent-[#788c3d]" />
+        </label>
+
+        <label className={`flex cursor-pointer items-center justify-between gap-4 rounded-2xl border p-4 transition ${showProgressBar ? 'border-[#91ad37] bg-[#f4f9df] ring-2 ring-[#e9f3c5]' : 'border-[#d9dfd7] hover:border-[#b8c6b6]'}`}>
+          <span>
+            <span className="block text-sm font-bold text-[#33443a]">Show progress bar</span>
+            <span className="mt-1 block text-xs leading-5 text-[#819087]">Keep track of how much of the quiz you have answered.</span>
+          </span>
+          <input type="checkbox" checked={showProgressBar} onChange={(event) => onProgressBarChange(event.target.checked)} className="size-5 accent-[#788c3d]" />
         </label>
       </div>
 

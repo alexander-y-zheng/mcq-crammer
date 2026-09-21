@@ -7,6 +7,7 @@ function QuizView({
   currentQuestion,
   viewMode,
   gradingMode,
+  showProgressBar,
   isSubmitted,
   reviewAll,
   showSubmitHint,
@@ -23,6 +24,28 @@ function QuizView({
 }) {
   const isSingleView = viewMode === 'single' && !reviewAll
   const answeredCount = Object.keys(answers).length
+  const progressPercent = questions.length === 0 ? 0 : Math.round((answeredCount / questions.length) * 100)
+
+  const progressBar = (
+    <div className="w-full rounded-xl border border-[#d9dfd7] bg-white p-3 shadow-sm" aria-label={`${answeredCount} of ${questions.length} questions answered`}>
+      <div className="mb-2 flex items-center justify-between gap-3 text-xs font-bold text-[#617067]">
+        <span>Progress</span>
+        <span>{progressPercent}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-[#e9eee5]">
+        <div className="h-full rounded-full bg-[#91ad37] transition-[width] duration-300" style={{ width: `${progressPercent}%` }} />
+      </div>
+    </div>
+  )
+
+  const verticalProgressBar = (
+    <div className="fixed right-4 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-2 sm:right-6" aria-label={`${answeredCount} of ${questions.length} questions answered`} title={`${answeredCount} of ${questions.length} questions answered`}>
+      <span className="whitespace-nowrap text-[10px] font-bold text-[#617067]">{progressPercent}%</span>
+      <div className="flex h-48 w-3 items-end overflow-hidden rounded-full border border-[#cbd6c9] bg-white/90 p-0.5 shadow-sm backdrop-blur-sm">
+        <div className="w-full rounded-full bg-[#91ad37] transition-[height] duration-300" style={{ height: `${progressPercent}%` }} />
+      </div>
+    </div>
+  )
 
   return (
     <section className="flex-1 py-10 sm:py-14">
@@ -53,25 +76,29 @@ function QuizView({
           />
           <div className="mt-6 flex justify-between gap-4">
             <button type="button" disabled={currentQuestion === 0} onClick={onPrevious} className="rounded-xl border border-[#cbd6c9] bg-white px-5 py-3 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37] disabled:cursor-not-allowed disabled:opacity-40">Previous</button>
+            {showProgressBar && <div className="min-w-0 flex-1">{progressBar}</div>}
             <button type="button" disabled={currentQuestion === questions.length - 1} onClick={onNext} className="rounded-xl bg-[#263b31] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#17281f] disabled:cursor-not-allowed disabled:opacity-40">Next question</button>
           </div>
         </div>
       ) : (
-        <div className="mx-auto max-w-3xl space-y-6">
-          {questions.map((question, index) => (
-            <QuizQuestion
-              key={index}
-              question={question}
-              questionIndex={index}
-              answers={answers}
-              gradingMode={gradingMode}
-              isSubmitted={isSubmitted}
-              isReviewing={reviewAll}
-              onSelectAnswer={onSelectAnswer}
-              onDeselectAnswer={onDeselectAnswer}
-            />
-          ))}
-        </div>
+        <>
+          <div className="mx-auto max-w-3xl space-y-6">
+            {questions.map((question, index) => (
+              <QuizQuestion
+                key={index}
+                question={question}
+                questionIndex={index}
+                answers={answers}
+                gradingMode={gradingMode}
+                isSubmitted={isSubmitted}
+                isReviewing={reviewAll}
+                onSelectAnswer={onSelectAnswer}
+                onDeselectAnswer={onDeselectAnswer}
+              />
+            ))}
+          </div>
+          {showProgressBar && verticalProgressBar}
+        </>
       )}
 
       <div className="mx-auto mt-10 flex max-w-3xl flex-col items-center gap-4 border-t border-[#d9dfd7] pt-8">
