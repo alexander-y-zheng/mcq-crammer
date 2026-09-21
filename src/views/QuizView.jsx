@@ -47,6 +47,7 @@ function QuizView({
             answers={answers}
             gradingMode={gradingMode}
             isSubmitted={isSubmitted}
+            isReviewing={reviewAll}
             onSelectAnswer={onSelectAnswer}
             onDeselectAnswer={onDeselectAnswer}
           />
@@ -65,6 +66,7 @@ function QuizView({
               answers={answers}
               gradingMode={gradingMode}
               isSubmitted={isSubmitted}
+              isReviewing={reviewAll}
               onSelectAnswer={onSelectAnswer}
               onDeselectAnswer={onDeselectAnswer}
             />

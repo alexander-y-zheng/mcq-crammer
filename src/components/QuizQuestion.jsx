@@ -6,6 +6,7 @@ function QuizQuestion({
   answers,
   gradingMode,
   isSubmitted,
+  isReviewing,
   onSelectAnswer,
   onDeselectAnswer,
 }) {
@@ -37,6 +38,8 @@ function QuizQuestion({
           if (showFeedback && !isSelected && isCorrect) optionStyle = 'border-[#72a666] bg-[#eaf6e7] text-[#38643a]'
           if (gradingMode === 'end' && isSelected && !isSubmitted) optionStyle = 'border-[#b3bcc5] bg-[#f3f5f7] text-[#465562] ring-2 ring-[#dfe5eb]'
           if (showResults && isSelected) optionStyle = isCorrect ? 'border-[#72a666] bg-[#eaf6e7] text-[#38643a]' : 'border-[#d27869] bg-[#fff0ed] text-[#98493e]'
+          if (isReviewing && isCorrect) optionStyle = hasAnswered ? 'border-[#72a666] bg-[#eaf6e7] text-[#38643a]' : 'border-[#b3bcc5] bg-[#f3f5f7] text-[#465562] ring-2 ring-[#dfe5eb]'
+          if (isReviewing && isSelected && !isCorrect) optionStyle = 'border-[#d27869] bg-[#fff0ed] text-[#98493e]'
 
           return (
             <button key={optionIndex} type="button" disabled={showFeedback || isSubmitted} onClick={() => onSelectAnswer(questionIndex, optionIndex)} className={`flex w-full items-start gap-4 rounded-2xl border px-4 py-4 text-left text-sm font-semibold transition disabled:cursor-default ${optionStyle}`}>
@@ -46,7 +49,7 @@ function QuizQuestion({
           )
         })}
       </div>
-      {(showFeedback || showResults) && question.explanation && (
+      {(showFeedback || showResults || isReviewing) && question.explanation && (
         <div className="mt-6 rounded-2xl bg-[#f4f7ef] px-4 py-4 text-sm leading-6 text-[#5e7063]"><span className="font-bold text-[#334c3a]">Explanation: </span><MarkdownContent>{question.explanation}</MarkdownContent></div>
       )}
     </article>
