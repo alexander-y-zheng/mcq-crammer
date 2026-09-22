@@ -11,7 +11,7 @@ function ResultsView({
   showMissedQuestions,
   onToggleMissedQuestions,
   onCopyPrompt,
-  onBackToQuiz,
+  onReviewQuiz,
   onRetry,
 }) {
   return (
@@ -83,8 +83,8 @@ function ResultsView({
         )}
 
         <div className="mt-10 space-y-3">
-          <button type="button" onClick={onBackToQuiz} className="w-full rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Back to Quiz</button>
-          <button type="button" onClick={onRetry} className="w-full rounded-xl border border-[#cbd6c9] bg-white px-5 py-3.5 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Retry Quiz</button>
+          <button type="button" onClick={onReviewQuiz} className="w-full rounded-xl border border-[#91ad37] bg-[#f4f9df] px-5 py-3.5 text-sm font-bold text-[#49623f] transition hover:bg-[#e9f3c5] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Review Quiz</button>
+          <button type="button" onClick={onRetry} className="w-full rounded-xl bg-[#263b31] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#17281f] focus:outline-none focus:ring-4 focus:ring-[#d6ed63]">Retry Quiz</button>
         </div>
       </div>
     </section>

@@ -38,6 +38,19 @@ function useQuizSession({ questions, viewMode, gradingMode }) {
     setQuizStarted(true)
   }
 
+  const restoreQuiz = (savedQuiz) => {
+    setAnswers(savedQuiz.answers || {})
+    setCurrentQuestion(Math.min(savedQuiz.currentQuestion || 0, savedQuiz.questions.length - 1))
+    setIsSubmitted(false)
+    setUnansweredCount(0)
+    setShowSubmitConfirmation(false)
+    setShowRetryConfirmation(false)
+    setShowSummary(false)
+    setReviewAll(false)
+    setQuizStarted(true)
+    window.scrollTo(0, 0)
+  }
+
   const resetToHome = () => {
     setQuizStarted(false)
     setAnswers({})
@@ -149,6 +162,7 @@ function useQuizSession({ questions, viewMode, gradingMode }) {
     setReviewAll,
     resetForQuizLoad,
     startQuiz,
+    restoreQuiz,
     resetToHome,
     confirmRetryQuiz,
     selectAnswer,

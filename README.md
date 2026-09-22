@@ -1,16 +1,29 @@
-# React + Vite
+# MCQ Crammer
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+MCQ Crammer turns Markdown multiple-choice quizzes into focused study sessions.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Upload a Markdown quiz or choose a built-in sample.
+- Resume one unfinished quiz across browser sessions.
+- Review recent completed quiz attempts.
+- Delete individual attempts or clear completed history.
+- Discard unfinished saved progress separately from completed history.
 
-## React Compiler
+## Local persistence
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Quiz progress and completed attempt summaries are stored locally in the browser using `localStorage`. The data is specific to this browser and website origin; it is not synchronized between devices or browsers.
 
-## Expanding the Oxlint configuration
+MCQ Crammer stores one active quiz snapshot and a bounded list of recent attempt summaries. Clearing browser site data, using a private browsing session, or changing browser profiles can remove the saved data.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Development
+
+```bash
+npm install
+npm run dev
+```
+
+```bash
+npm run lint
+npm run build
+```

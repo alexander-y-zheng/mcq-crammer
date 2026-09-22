@@ -4,6 +4,7 @@ import ConfirmationDialog from './components/ConfirmationDialog'
 import AppHeader from './components/AppHeader'
 import SettingsDrawer from './components/SettingsDrawer'
 import GuideView from './views/GuideView'
+import HistoryView from './views/HistoryView'
 import HomeView from './views/HomeView'
 import QuizSetupView from './views/QuizSetupView'
 import QuizView from './views/QuizView'
@@ -12,6 +13,7 @@ import sampleQuizzes from './data/sampleQuizzes'
 import { quizGenerationPrompt, quizTemplate } from './data/quizPrompts'
 import useQuizSession from './hooks/useQuizSession'
 import useWorkspacePreferences from './hooks/useWorkspacePreferences'
+import { clearAttempts, createQuizId, loadAttempts, loadPartialQuiz, removeAttempt, removePartialQuiz, saveAttempts, savePartialQuiz } from './studyStorage'
 import 'katex/dist/katex.min.css'
 
 const createSeededRandom = (seed) => () => {
@@ -37,6 +39,7 @@ const shuffleAnswers = (questionsToShuffle, seed) => {
 
 function App() {
   const [questions, setQuestions] = useState([])
+  const [quizContent, setQuizContent] = useState('')
   const [isScrolled, setIsScrolled] = useState(false)
   const [fileName, setFileName] = useState('')
   const [selectedSample, setSelectedSample] = useState('')
@@ -48,9 +51,20 @@ function App() {
   const [randomizeAnswers, setRandomizeAnswers] = useState(false)
   const [showProgressBar, setShowProgressBar] = useState(false)
   const [showResetConfirmation, setShowResetConfirmation] = useState(false)
+  const [showReplacementConfirmation, setShowReplacementConfirmation] = useState(false)
+  const [showDeleteAttemptConfirmation, setShowDeleteAttemptConfirmation] = useState(false)
+  const [showClearHistoryConfirmation, setShowClearHistoryConfirmation] = useState(false)
+  const [showDiscardPartialConfirmation, setShowDiscardPartialConfirmation] = useState(false)
+  const [attemptToDelete, setAttemptToDelete] = useState(null)
   const [copiedPrompt, setCopiedPrompt] = useState('')
   const [showGuide, setShowGuide] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [savedPartial, setSavedPartial] = useState(() => loadPartialQuiz())
+  const [attempts, setAttempts] = useState(() => loadAttempts())
+  const [showResumePrompt, setShowResumePrompt] = useState(() => Boolean(loadPartialQuiz()))
+  const [pendingQuiz, setPendingQuiz] = useState(null)
+  const [hasRecordedCurrentAttempt, setHasRecordedCurrentAttempt] = useState(false)
   const {
     isDarkMode,
     theme,
@@ -82,16 +96,36 @@ function App() {
     setReviewAll,
     resetForQuizLoad,
     startQuiz: startQuizSession,
+    restoreQuiz,
     resetToHome,
     confirmRetryQuiz,
     selectAnswer,
     deselectAnswer,
-    submitQuiz,
-    confirmSubmitQuiz,
+    submitQuiz: submitQuizSession,
+    confirmSubmitQuiz: confirmSubmitQuizSession,
     showSummaryPage,
     getScore,
     missedQuestions,
   } = quizSession
+
+  useEffect(() => {
+    if (!quizStarted || isSubmitted || questions.length === 0 || !quizContent) return
+    const nextPartial = {
+      version: 1,
+      quizId: createQuizId(quizContent),
+      fileName,
+      content: quizContent,
+      questions,
+      answers,
+      currentQuestion,
+      viewMode,
+      gradingMode,
+      randomizeAnswers,
+      showProgressBar,
+      updatedAt: new Date().toISOString(),
+    }
+    if (savePartialQuiz(nextPartial)) setSavedPartial(nextPartial)
+  }, [answers, currentQuestion, fileName, gradingMode, isSubmitted, questions, quizContent, quizStarted, randomizeAnswers, showProgressBar, viewMode])
 
   useEffect(() => {
     if (!isConfigOpen || quizStarted) return
@@ -107,7 +141,20 @@ function App() {
     return () => window.removeEventListener('scroll', updateScrollState)
   }, [])
 
-  const saveQuiz = (content, name) => {
+  const commitQuiz = (content, name, parsedQuestions = parseMarkdown(content)) => {
+    setQuizContent(content)
+    setQuestions(parsedQuestions)
+    setFileName(name)
+    setError('')
+    resetForQuizLoad()
+    setCopiedPrompt('')
+    setIsConfigOpen(true)
+    setHasRecordedCurrentAttempt(false)
+    removePartialQuiz()
+    setSavedPartial(null)
+  }
+
+  const requestQuizLoad = (content, name) => {
     const parsedQuestions = parseMarkdown(content)
     if (parsedQuestions.length === 0) {
       setQuestions([])
@@ -116,12 +163,13 @@ function App() {
       return
     }
 
-    setQuestions(parsedQuestions)
-    setFileName(name)
-    setError('')
-    resetForQuizLoad()
-    setCopiedPrompt('')
-    setIsConfigOpen(true)
+    if (savedPartial) {
+      setPendingQuiz({ content, name, parsedQuestions })
+      setShowReplacementConfirmation(true)
+      return
+    }
+
+    commitQuiz(content, name, parsedQuestions)
   }
 
   const handleFile = async (file) => {
@@ -131,7 +179,7 @@ function App() {
       return
     }
 
-    saveQuiz(await file.text(), file.name)
+    requestQuizLoad(await file.text(), file.name)
   }
 
   const handleDrop = (event) => {
@@ -146,6 +194,7 @@ function App() {
     }
     startQuizSession()
     setIsConfigOpen(false)
+    setHasRecordedCurrentAttempt(false)
   }
 
   const retryQuiz = () => {
@@ -153,10 +202,12 @@ function App() {
       setQuestions((currentQuestions) => shuffleAnswers(currentQuestions, Date.now()))
     }
     confirmRetryQuiz()
+    setHasRecordedCurrentAttempt(false)
   }
 
   const returnHome = () => {
     setQuestions([])
+    setQuizContent('')
     setFileName('')
     setSelectedSample('')
     setError('')
@@ -166,7 +217,89 @@ function App() {
   }
 
   const handleHomeClick = () => {
-    if (quizStarted) setShowResetConfirmation(true)
+    if (quizStarted) {
+      setShowResetConfirmation(true)
+      return
+    }
+    setShowGuide(false)
+    setShowHistory(false)
+  }
+
+  const recordAttempt = () => {
+    if (hasRecordedCurrentAttempt) return
+    const attempt = {
+      id: `attempt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      quizId: createQuizId(quizContent),
+      fileName,
+      score: getScore(),
+      totalQuestions: questions.length,
+      answeredCount: Object.keys(answers).length,
+      completedAt: new Date().toISOString(),
+    }
+    const nextAttempts = [attempt, ...attempts].slice(0, 20)
+    if (saveAttempts(nextAttempts)) setAttempts(nextAttempts)
+    removePartialQuiz()
+    setSavedPartial(null)
+    setHasRecordedCurrentAttempt(true)
+  }
+
+  const submitQuiz = () => {
+    const unanswered = questions.length - Object.keys(answers).length
+    if (unanswered === 0) recordAttempt()
+    submitQuizSession()
+  }
+
+  const confirmSubmitQuiz = () => {
+    recordAttempt()
+    confirmSubmitQuizSession()
+  }
+
+  const deleteHistoryAttempt = () => {
+    if (!attemptToDelete) return
+    setAttempts(removeAttempt(attemptToDelete.id))
+    setAttemptToDelete(null)
+    setShowDeleteAttemptConfirmation(false)
+  }
+
+  const clearHistory = () => {
+    setAttempts(clearAttempts())
+    setShowClearHistoryConfirmation(false)
+  }
+
+  const discardSavedQuiz = () => {
+    removePartialQuiz()
+    setSavedPartial(null)
+    setShowResumePrompt(false)
+    setShowDiscardPartialConfirmation(false)
+  }
+
+  const resumeQuiz = () => {
+    if (!savedPartial) return
+    setQuizContent(savedPartial.content)
+    setQuestions(savedPartial.questions)
+    setFileName(savedPartial.fileName)
+    setViewMode(savedPartial.viewMode || 'single')
+    setGradingMode(savedPartial.gradingMode || 'instant')
+    setRandomizeAnswers(Boolean(savedPartial.randomizeAnswers))
+    setShowProgressBar(Boolean(savedPartial.showProgressBar))
+    restoreQuiz(savedPartial)
+    setShowResumePrompt(false)
+    setIsConfigOpen(false)
+  }
+
+  const confirmReplacement = () => {
+    if (!pendingQuiz) return
+    const { content, name, parsedQuestions } = pendingQuiz
+    setPendingQuiz(null)
+    setShowReplacementConfirmation(false)
+    commitQuiz(content, name, parsedQuestions)
+  }
+
+  const reviewQuiz = () => {
+    setShowSummary(false)
+    setReviewAll(true)
+    setCurrentQuestion(0)
+    window.scrollTo(0, 0)
   }
 
   const missedQuestionText = missedQuestions.map((question) => {
@@ -203,8 +336,21 @@ function App() {
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-6 py-8 sm:px-10 lg:px-16">
         <AppHeader
           showGuide={showGuide}
+          showHistory={showHistory}
+          quizStarted={quizStarted}
           onHomeClick={handleHomeClick}
-          onGuideToggle={() => setShowGuide((isVisible) => !isVisible)}
+          onGuideToggle={() => {
+            setShowHistory(false)
+            setShowGuide((isVisible) => !isVisible)
+          }}
+          onWorkspaceBack={() => {
+            setShowGuide(false)
+            setShowHistory(false)
+          }}
+          onHistoryToggle={() => {
+            setShowGuide(false)
+            setShowHistory(true)
+          }}
           onSettingsOpen={() => setIsSettingsOpen(true)}
         />
 
@@ -214,6 +360,12 @@ function App() {
             copiedPrompt={copiedPrompt}
             onCopyPrompt={copyPrompt}
             onDownloadTemplate={downloadTemplate}
+          />
+        ) : showHistory ? (
+          <HistoryView
+            attempts={attempts}
+            onDeleteAttempt={(attempt) => { setAttemptToDelete(attempt); setShowDeleteAttemptConfirmation(true) }}
+            onClearHistory={() => setShowClearHistoryConfirmation(true)}
           />
         ) : quizStarted ? showSummary ? (
           <ResultsView
@@ -229,7 +381,7 @@ function App() {
             showMissedQuestions={showMissedQuestions}
             onToggleMissedQuestions={() => setShowMissedQuestions((isVisible) => !isVisible)}
             onCopyPrompt={copyPrompt}
-            onBackToQuiz={() => { setShowSummary(false); setReviewAll(true) }}
+            onReviewQuiz={reviewQuiz}
             onRetry={() => setShowRetryConfirmation(true)}
           />
         ) : (
@@ -265,10 +417,14 @@ function App() {
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
             onFileSelect={handleFile}
+            savedPartial={savedPartial}
+            latestAttempt={attempts[0]}
+            onResume={resumeQuiz}
+            onDiscardSavedQuiz={() => setShowDiscardPartialConfirmation(true)}
             onSampleSelect={(fileNameValue) => {
               const sample = sampleQuizzes.find(({ fileName: name }) => name === fileNameValue)
               setSelectedSample(fileNameValue)
-              if (sample) saveQuiz(sample.content, sample.fileName)
+                if (sample) requestQuizLoad(sample.content, sample.fileName)
             }}
           />
         )}
@@ -324,9 +480,11 @@ function App() {
 
       {showResetConfirmation && (
         <ConfirmationDialog
-          eyebrow="Leave quiz?"
-          title="Return to the home page?"
-          description="You will lose your progress and will have to reupload a file to start another quiz."
+          eyebrow={isSubmitted ? 'Leave results?' : 'Leave quiz?'}
+          title={isSubmitted ? 'Return to the home page?' : 'Return to the home page?'}
+          description={isSubmitted
+            ? 'Your results are already saved in study history. Returning home will close this result view; start Retry Quiz if you want to take the quiz again.'
+            : 'Your current quiz will be saved so you can resume it later. Completed study history will stay available, and you can discard saved progress separately.'}
           confirmLabel="Return Home"
           titleId="reset-confirmation-title"
           onCancel={() => setShowResetConfirmation(false)}
@@ -338,11 +496,71 @@ function App() {
         <ConfirmationDialog
           eyebrow="Start over?"
           title="Retry this quiz?"
-          description="This will completely reset the quiz and wipe all results. Your current answers and score will be lost."
+          description="This will start a fresh attempt from question one. Your current answers and score will be reset, but your completed study history will be kept."
           confirmLabel="Retry Quiz"
           titleId="retry-confirmation-title"
           onCancel={() => setShowRetryConfirmation(false)}
           onConfirm={retryQuiz}
+        />
+      )}
+
+      {showReplacementConfirmation && (
+        <ConfirmationDialog
+          eyebrow="Saved progress found"
+          title="Replace your unfinished quiz?"
+          description={`Starting ${pendingQuiz?.name || 'a new quiz'} will erase your saved progress for ${savedPartial?.fileName || 'the current quiz'}.`}
+          confirmLabel="Replace Quiz"
+          titleId="replacement-confirmation-title"
+          onCancel={() => { setPendingQuiz(null); setShowReplacementConfirmation(false) }}
+          onConfirm={confirmReplacement}
+        />
+      )}
+
+      {showDeleteAttemptConfirmation && (
+        <ConfirmationDialog
+          eyebrow="Delete attempt?"
+          title="Remove this history entry?"
+          description={`The ${attemptToDelete?.fileName || 'quiz'} result will be removed from recent history.`}
+          confirmLabel="Delete Attempt"
+          titleId="delete-attempt-confirmation-title"
+          onCancel={() => { setAttemptToDelete(null); setShowDeleteAttemptConfirmation(false) }}
+          onConfirm={deleteHistoryAttempt}
+        />
+      )}
+
+      {showClearHistoryConfirmation && (
+        <ConfirmationDialog
+          eyebrow="Clear history?"
+          title="Remove all completed attempts?"
+          description="Your saved unfinished quiz will stay available. Only completed quiz history will be removed."
+          confirmLabel="Clear History"
+          titleId="clear-history-confirmation-title"
+          onCancel={() => setShowClearHistoryConfirmation(false)}
+          onConfirm={clearHistory}
+        />
+      )}
+
+      {showDiscardPartialConfirmation && (
+        <ConfirmationDialog
+          eyebrow="Discard saved quiz?"
+          title="Erase unfinished progress?"
+          description={`Your saved progress for ${savedPartial?.fileName || 'this quiz'} will be deleted. Completed history will stay intact.`}
+          confirmLabel="Discard Saved Quiz"
+          titleId="discard-partial-confirmation-title"
+          onCancel={() => setShowDiscardPartialConfirmation(false)}
+          onConfirm={discardSavedQuiz}
+        />
+      )}
+
+      {showResumePrompt && savedPartial && !quizStarted && (
+        <ConfirmationDialog
+          eyebrow="Welcome back"
+          title={`Resume ${savedPartial.fileName}?`}
+          description={`${Object.keys(savedPartial.answers || {}).length} of ${savedPartial.questions.length} questions answered. Your saved position and study settings are ready.`}
+          confirmLabel="Resume Quiz"
+          titleId="resume-confirmation-title"
+          onCancel={() => setShowResumePrompt(false)}
+          onConfirm={resumeQuiz}
         />
       )}
 

@@ -10,6 +10,10 @@ function HomeView({
   onDrop,
   onFileSelect,
   onSampleSelect,
+  savedPartial,
+  latestAttempt,
+  onResume,
+  onDiscardSavedQuiz,
 }) {
   return (
     <section className="grid flex-1 items-center gap-12 py-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
@@ -20,6 +24,31 @@ function HomeView({
       </div>
 
       <div className="space-y-5">
+        {savedPartial && (
+          <section className="rounded-3xl border border-[#cbd6c9] bg-[#f4f9df] p-5 shadow-[0_12px_30px_rgba(54,75,61,0.06)]" aria-labelledby="saved-quiz-title">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Saved progress</p>
+            <h2 id="saved-quiz-title" className="mt-2 break-words text-xl font-bold text-[#26332d]">{savedPartial.fileName}</h2>
+            <p className="mt-1 text-sm text-[#617067]">{Object.keys(savedPartial.answers || {}).length} of {savedPartial.questions.length} questions answered.</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button type="button" onClick={onResume} className="rounded-xl bg-[#263b31] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#17281f]">Resume quiz</button>
+              <button type="button" onClick={onDiscardSavedQuiz} className="rounded-xl border border-[#cbd6c9] bg-white px-4 py-2.5 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37]">Discard saved quiz</button>
+            </div>
+          </section>
+        )}
+
+        {latestAttempt && (
+          <section className="rounded-3xl border border-[#d9dfd7] bg-white p-5 shadow-[0_12px_30px_rgba(54,75,61,0.06)]" aria-labelledby="latest-result-title">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Latest result</p>
+            <div className="mt-2 flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <h2 id="latest-result-title" className="truncate text-xl font-bold text-[#26332d]">{latestAttempt.fileName}</h2>
+                <p className="mt-1 text-xs text-[#819087]">Completed {new Date(latestAttempt.completedAt).toLocaleString()}</p>
+              </div>
+              <span className="shrink-0 text-2xl font-black text-[#49623f]">{latestAttempt.score}/{latestAttempt.totalQuestions}</span>
+            </div>
+          </section>
+        )}
+
         <div
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
