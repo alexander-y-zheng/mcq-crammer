@@ -38,6 +38,21 @@ const shuffleAnswers = (questionsToShuffle, seed) => {
   })
 }
 
+const faviconColors = {
+  green: { light: ['#d6ed63', '#26331f'], dark: ['#40501f', '#f1f6c8'] },
+  sepia: { light: ['#f1e2c9', '#5a4230'], dark: ['#493326', '#f1dfc5'] },
+  blue: { light: ['#dcecf6', '#31566f'], dark: ['#1f3d4f', '#d7eaf7'] },
+  purple: { light: ['#eadcf5', '#582b80'], dark: ['#3b2450', '#f0ddff'] },
+}
+
+const updateFavicon = (theme, isDarkMode) => {
+  const link = document.querySelector('link[rel="icon"]')
+  if (!link) return
+  const [background, foreground] = (faviconColors[theme] || faviconColors.green)[isDarkMode ? 'dark' : 'light']
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="${background}"/><text x="32" y="46" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="${foreground}">?</text></svg>`
+  link.href = `data:image/svg+xml,${encodeURIComponent(svg)}`
+}
+
 function App() {
   const [questions, setQuestions] = useState([])
   const [quizContent, setQuizContent] = useState('')
@@ -134,6 +149,10 @@ function App() {
       window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
     })
   }, [isConfigOpen, quizStarted])
+
+  useEffect(() => {
+    updateFavicon(theme, isDarkMode)
+  }, [isDarkMode, theme])
 
   useEffect(() => {
     const updateScrollState = () => setIsScrolled(window.scrollY > 24)

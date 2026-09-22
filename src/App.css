@@ -231,6 +231,11 @@
   background-color: #203a2a !important;
 }
 
+.dark-mode code {
+  background-color: #3a3026 !important;
+  color: #f5d98d !important;
+}
+
 .dark-mode [class~="bg-[#fff0ed]"] {
   background-color: #452925 !important;
 }
@@ -362,6 +367,71 @@
 .theme-purple.dark-mode [class~="border-[#d9dfd7]"],
 .theme-purple.dark-mode [class~="border-[#cbd6c9]"] { border-color: #563b6c !important; }
 .theme-purple.dark-mode .theme-toggle { background-color: #2d1d3b !important; color: #d28cff !important; }
+
+/* Keep shared interactive utility colors aligned with the selected non-green theme. */
+.theme-sepia,
+.theme-blue,
+.theme-purple {
+  --theme-accent: #788c3d;
+  --theme-accent-strong: #263b31;
+  --theme-accent-hover: #17281f;
+  --theme-accent-soft: #f4f9df;
+  --theme-accent-ring: #e9f3c5;
+  --theme-border-accent: #91ad37;
+}
+
+.theme-sepia { --theme-accent: #7c5a3d; --theme-accent-strong: #5a4230; --theme-accent-hover: #403024; --theme-accent-soft: #f1e2c9; --theme-accent-ring: #ead6b8; --theme-border-accent: #b88652; }
+.theme-blue { --theme-accent: #386582; --theme-accent-strong: #31566f; --theme-accent-hover: #243f52; --theme-accent-soft: #dcecf6; --theme-accent-ring: #c3dce9; --theme-border-accent: #5b9ac0; }
+.theme-purple { --theme-accent: #7136a0; --theme-accent-strong: #582b80; --theme-accent-hover: #3d1d5b; --theme-accent-soft: #eadcf5; --theme-accent-ring: #dbc4ec; --theme-border-accent: #9a5bc2; }
+.theme-sepia.dark-mode { --theme-accent: #e7bd84; --theme-accent-strong: #5a4230; --theme-accent-hover: #3f2d22; --theme-accent-soft: #493326; --theme-accent-ring: #795338; --theme-border-accent: #c18a50; }
+.theme-blue.dark-mode { --theme-accent: #9ed4f2; --theme-accent-strong: #1d303d; --theme-accent-hover: #142633; --theme-accent-soft: #1f3d4f; --theme-accent-ring: #477b96; --theme-border-accent: #69afd2; }
+.theme-purple.dark-mode { --theme-accent: #d28cff; --theme-accent-strong: #2d1d3b; --theme-accent-hover: #21132d; --theme-accent-soft: #3b2450; --theme-accent-ring: #80529b; --theme-border-accent: #b777dc; }
+
+.theme-sepia [class~="text-[#788c3d]"],
+.theme-blue [class~="text-[#788c3d]"],
+.theme-purple [class~="text-[#788c3d]"],
+.theme-sepia [class~="text-[#49623f]"],
+.theme-blue [class~="text-[#49623f]"],
+.theme-purple [class~="text-[#49623f]"] { color: var(--theme-accent) !important; }
+
+.theme-sepia [class~="border-[#91ad37]"],
+.theme-blue [class~="border-[#91ad37]"],
+.theme-purple [class~="border-[#91ad37]"] { border-color: var(--theme-border-accent) !important; }
+
+.theme-sepia [class~="bg-[#f4f9df]"],
+.theme-blue [class~="bg-[#f4f9df]"],
+.theme-purple [class~="bg-[#f4f9df]"],
+.theme-sepia [class~="bg-[#e9f3c5]"],
+.theme-blue [class~="bg-[#e9f3c5]"],
+.theme-purple [class~="bg-[#e9f3c5]"] { background-color: var(--theme-accent-soft) !important; }
+
+.theme-sepia [class~="bg-[#263b31]"],
+.theme-blue [class~="bg-[#263b31]"],
+.theme-purple [class~="bg-[#263b31]"] { background-color: var(--theme-accent-strong) !important; }
+
+.theme-sepia [class~="bg-[#d6ed63]"],
+.theme-blue [class~="bg-[#d6ed63]"],
+.theme-purple [class~="bg-[#d6ed63]"] { background-color: var(--theme-accent-soft) !important; }
+
+.theme-sepia input[type="checkbox"],
+.theme-blue input[type="checkbox"],
+.theme-purple input[type="checkbox"] { accent-color: var(--theme-border-accent); }
+
+.theme-sepia code,
+.theme-blue code,
+.theme-purple code { background-color: var(--theme-accent-soft) !important; color: var(--theme-accent-strong) !important; }
+
+.theme-sepia [class~="ring-[#e9f3c5]"],
+.theme-blue [class~="ring-[#e9f3c5]"],
+.theme-purple [class~="ring-[#e9f3c5]"] { --tw-ring-color: var(--theme-accent-ring) !important; }
+
+.theme-sepia :is(button, input, select, textarea):focus-visible,
+.theme-blue :is(button, input, select, textarea):focus-visible,
+.theme-purple :is(button, input, select, textarea):focus-visible { outline-color: var(--theme-border-accent); }
+
+.theme-sepia.dark-mode code,
+.theme-blue.dark-mode code,
+.theme-purple.dark-mode code { background-color: color-mix(in srgb, var(--theme-accent-strong) 65%, #111 35%) !important; color: var(--theme-accent-soft) !important; }
 
 .app-font-default { font-family: ui-sans-serif, system-ui, sans-serif; }
 .app-font-serif { font-family: Georgia, 'Times New Roman', serif; }
