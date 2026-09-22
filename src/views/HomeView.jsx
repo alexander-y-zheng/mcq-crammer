@@ -15,6 +15,12 @@ function HomeView({
   onResume,
   onDiscardSavedQuiz,
 }) {
+  const handleFileSelect = (event) => {
+    const [file] = event.target.files
+    event.target.value = ''
+    onFileSelect(file)
+  }
+
   return (
     <section className="grid flex-1 items-center gap-12 py-16 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
       <div>
@@ -63,7 +69,7 @@ function HomeView({
               <p className="mt-2 text-sm leading-6 text-[#738077]">{questions.length} questions ready to configure.</p>
               <label className="mt-7 inline-flex cursor-pointer items-center rounded-xl border border-[#cbd6c9] bg-white px-5 py-3 text-sm font-bold text-[#33443a] transition hover:border-[#91ad37] focus-within:ring-4 focus-within:ring-[#d6ed63]">
                 Choose another .md file
-                <input type="file" accept=".md,text/markdown" className="sr-only" onChange={(event) => onFileSelect(event.target.files[0])} />
+                <input type="file" accept=".md,text/markdown" className="sr-only" onChange={handleFileSelect} />
               </label>
             </>
           ) : (
@@ -73,7 +79,7 @@ function HomeView({
               <p className="mt-2 text-sm leading-6 text-[#738077]">Upload a Markdown file and we&apos;ll parse each question automatically.</p>
               <label className="mt-7 inline-flex cursor-pointer items-center rounded-xl bg-[#263b31] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#17281f] focus-within:ring-4 focus-within:ring-[#d6ed63]">
                 Choose .md file
-                <input type="file" accept=".md,text/markdown" className="sr-only" onChange={(event) => onFileSelect(event.target.files[0])} />
+                <input type="file" accept=".md,text/markdown" className="sr-only" onChange={handleFileSelect} />
               </label>
               <p className="mt-4 text-xs text-[#99a59c]">Maximum flexibility, zero formatting fuss.</p>
             </>

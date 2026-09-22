@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { fontOptions, themeOptions } from '../data/settingsOptions'
 
 function SettingsDrawer({
@@ -21,16 +22,39 @@ function SettingsDrawer({
   onFontChange,
   onDarkModeToggle,
 }) {
+  const drawerRef = useRef(null)
+  const closeButtonRef = useRef(null)
+  const previouslyFocusedRef = useRef(null)
+
+  useEffect(() => {
+    if (!isOpen) return undefined
+    previouslyFocusedRef.current = document.activeElement
+    drawerRef.current?.scrollTo({ top: 0 })
+    closeButtonRef.current?.focus()
+    return () => {
+      if (previouslyFocusedRef.current instanceof HTMLElement && previouslyFocusedRef.current.isConnected) previouslyFocusedRef.current.focus()
+    }
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return undefined
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+
   return (
     <>
       <button type="button" onClick={onClose} className={`fixed inset-0 z-30 cursor-default bg-[#1d2925]/30 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`} aria-label="Close quiz settings" tabIndex={isOpen ? 0 : -1} />
-      <aside className={`fixed right-0 top-0 z-40 flex h-full w-full max-w-sm flex-col overflow-y-auto border-l border-[#d9dfd7] bg-white p-5 shadow-2xl transition-transform duration-300 ease-out sm:p-6 ${isOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full'}`} aria-labelledby="settings-title" aria-hidden={!isOpen}>
+      <aside ref={drawerRef} className={`fixed right-0 top-0 z-40 flex h-full w-full max-w-sm flex-col overflow-y-auto border-l border-[#d9dfd7] bg-white p-5 shadow-2xl transition-transform duration-300 ease-out sm:p-6 ${isOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full'}`} aria-labelledby="settings-title" aria-hidden={!isOpen} inert={!isOpen}>
         <div className="flex items-start justify-between gap-4 border-b border-[#d9dfd7] pb-5">
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Workspace</p>
             <h2 id="settings-title" className="text-2xl font-black tracking-tight text-[#26332d]">Quiz settings</h2>
           </div>
-          <button type="button" onClick={onClose} className="flex size-9 items-center justify-center rounded-full border border-[#cbd6c9] bg-white text-lg text-[#49623f] transition hover:border-[#91ad37]" aria-label="Close quiz settings" title="Close quiz settings">×</button>
+          <button ref={closeButtonRef} type="button" onClick={onClose} className="flex size-9 items-center justify-center rounded-full border border-[#cbd6c9] bg-white text-lg text-[#49623f] transition hover:border-[#91ad37]" aria-label="Close quiz settings" title="Close quiz settings">×</button>
         </div>
 
         <div className="space-y-6 py-6">

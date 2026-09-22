@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { parseMarkdown } from './quizParser'
 import ConfirmationDialog from './components/ConfirmationDialog'
 import AppHeader from './components/AppHeader'
@@ -7,7 +7,6 @@ import GuideView from './views/GuideView'
 import HistoryView from './views/HistoryView'
 import HomeView from './views/HomeView'
 import QuizSetupView from './views/QuizSetupView'
-import QuizView from './views/QuizView'
 import ResultsView from './views/ResultsView'
 import sampleQuizzes from './data/sampleQuizzes'
 import { quizGenerationPrompt, quizTemplate } from './data/quizPrompts'
@@ -15,6 +14,8 @@ import useQuizSession from './hooks/useQuizSession'
 import useWorkspacePreferences from './hooks/useWorkspacePreferences'
 import { clearAttempts, createQuizId, loadAttempts, loadPartialQuiz, removeAttempt, removePartialQuiz, saveAttempts, savePartialQuiz } from './studyStorage'
 import 'katex/dist/katex.min.css'
+
+const QuizView = lazy(() => import('./views/QuizView'))
 
 const createSeededRandom = (seed) => () => {
   seed += 0x6D2B79F5
@@ -124,7 +125,7 @@ function App() {
       showProgressBar,
       updatedAt: new Date().toISOString(),
     }
-    if (savePartialQuiz(nextPartial)) setSavedPartial(nextPartial)
+    savePartialQuiz(nextPartial)
   }, [answers, currentQuestion, fileName, gradingMode, isSubmitted, questions, quizContent, quizStarted, randomizeAnswers, showProgressBar, viewMode])
 
   useEffect(() => {
@@ -212,6 +213,7 @@ function App() {
     setSelectedSample('')
     setError('')
     setShowResetConfirmation(false)
+    setSavedPartial(loadPartialQuiz())
     resetToHome()
     setIsConfigOpen(false)
   }
@@ -385,28 +387,30 @@ function App() {
             onRetry={() => setShowRetryConfirmation(true)}
           />
         ) : (
-          <QuizView
-            fileName={fileName}
-            questions={questions}
-            answers={answers}
-            currentQuestion={currentQuestion}
-            viewMode={viewMode}
-            gradingMode={gradingMode}
-            showProgressBar={showProgressBar}
-            isSubmitted={isSubmitted}
-            reviewAll={reviewAll}
-            showSubmitHint={showSubmitHint}
-            onSelectAnswer={selectAnswer}
-            onDeselectAnswer={deselectAnswer}
-            onPrevious={() => setCurrentQuestion((index) => index - 1)}
-            onNext={() => setCurrentQuestion((index) => index + 1)}
-            onShowSummary={showSummaryPage}
-            onSubmit={submitQuiz}
-            onRetry={() => setShowRetryConfirmation(true)}
-            onSubmitHintEnter={() => setShowSubmitHint(true)}
-            onSubmitHintLeave={() => setShowSubmitHint(false)}
-            getScore={getScore}
-          />
+          <Suspense fallback={<section className="flex flex-1 items-center justify-center py-16 text-sm font-semibold text-[#738077]">Loading quiz...</section>}>
+            <QuizView
+              fileName={fileName}
+              questions={questions}
+              answers={answers}
+              currentQuestion={currentQuestion}
+              viewMode={viewMode}
+              gradingMode={gradingMode}
+              showProgressBar={showProgressBar}
+              isSubmitted={isSubmitted}
+              reviewAll={reviewAll}
+              showSubmitHint={showSubmitHint}
+              onSelectAnswer={selectAnswer}
+              onDeselectAnswer={deselectAnswer}
+              onPrevious={() => setCurrentQuestion((index) => index - 1)}
+              onNext={() => setCurrentQuestion((index) => index + 1)}
+              onShowSummary={showSummaryPage}
+              onSubmit={submitQuiz}
+              onRetry={() => setShowRetryConfirmation(true)}
+              onSubmitHintEnter={() => setShowSubmitHint(true)}
+              onSubmitHintLeave={() => setShowSubmitHint(false)}
+              getScore={getScore}
+            />
+          </Suspense>
         ) : (
           <HomeView
             fileName={fileName}
