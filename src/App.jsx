@@ -146,7 +146,7 @@ function App() {
   useEffect(() => {
     if (!isConfigOpen || quizStarted) return
     window.requestAnimationFrame(() => {
-      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })
+      document.getElementById('quiz-setup')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
   }, [isConfigOpen, quizStarted])
 

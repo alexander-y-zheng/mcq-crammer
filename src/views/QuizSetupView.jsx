@@ -1,6 +1,6 @@
 function QuizSetupView({ questionsCount, viewMode, gradingMode, randomizeAnswers, showProgressBar, onViewModeChange, onGradingModeChange, onRandomizeAnswersChange, onProgressBarChange, onStart }) {
   return (
-    <section className="mx-auto mb-8 w-full max-w-3xl rounded-3xl border border-[#d9dfd7] bg-white p-7 shadow-[0_18px_45px_rgba(54,75,61,0.08)] sm:p-9" aria-labelledby="quiz-settings-title">
+    <section id="quiz-setup" className="mx-auto mb-8 w-full max-w-3xl rounded-3xl border border-[#d9dfd7] bg-white p-7 shadow-[0_18px_45px_rgba(54,75,61,0.08)] sm:p-9" aria-labelledby="quiz-settings-title">
       <div className="mb-8">
         <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#788c3d]">Quiz ready</p>
         <h2 id="quiz-settings-title" className="text-3xl font-black tracking-tight text-[#26332d]">Set your study mode</h2>
